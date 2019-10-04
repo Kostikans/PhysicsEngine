@@ -97,26 +97,46 @@ void EngineRoutine::adjustPositions(Contact* c, unsigned numContacts, float dura
 EngineRoutine::EngineRoutine()
 {
 	accumulatedImpulse = 0.0f;
-	lambda = 0.0f;
+	lambda =0.0f;
 }
 
 void EngineRoutine::resolveContacts(Contact* contacts, unsigned numContacts, float duration)
 {
-	if (numContacts == 0) return;
 
-	//glm::vec3 relativeVelocity = contacts->body[0]->getVelocity();
 
-	//if (contacts->body[1])
-	//	relativeVelocity = contacts->body[0]->getVelocity() - contacts->body[1]->getVelocity();
+	glm::vec3 relativeVelocity = contacts->body[0]->getVelocity();
+	relativeVelocity = contacts->body[0]->getVelocity() - contacts->body[1]->getVelocity();
+	 if (glm::dot(relativeVelocity, contacts->contactNormal) > 0 && contacts->body[1]->stat != false)
+		return;
+	// else
+	// {
+	//	 relativeVelocity = contacts->body[0]->getVelocity();
+	//	 if (glm::dot(relativeVelocity, contacts->contactNormal) > 0)
+	//		 return;
+	//}
 
-	//if (glm::dot(relativeVelocity, contacts->contactNormal) > 0)
-	//	return;
-	lambda = contacts->computeLambda();
-	accumulatedImpulse += lambda;
-	if (accumulatedImpulse < 0.0f)
+    lambda = 0.0f;
+	if (contacts->body[1]->stat == true)
 	{
-		lambda += (0.0f - accumulatedImpulse);
-		accumulatedImpulse = 0.0f;
+		lambda = contacts->computeLambda();
+		accumulatedImpulse += lambda;
+		if (accumulatedImpulse < 0.0f)
+		{
+			lambda += (0.0f - accumulatedImpulse);
+			accumulatedImpulse = 0.0f;
+		}
+		contacts->aplly(lambda);
 	}
-	contacts->aplly(lambda);
+	else
+	{
+		lambda = contacts->computeLambdaForOne();
+		accumulatedImpulse += lambda;
+		if (accumulatedImpulse < 0.0f)
+		{
+			lambda += (0.0f - accumulatedImpulse);
+			accumulatedImpulse = 0.0f;
+		}
+		contacts->applyForOne(lambda);
+	}
+	
 }

@@ -4,7 +4,7 @@
 
 
 Sphere::Sphere()
-	: m_scale(1)
+	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\45614125-bcb2ce00-ba68-11e8-903b-f22addb83ca5.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_SPHERE,1.0f);
@@ -34,7 +34,7 @@ void Sphere::draw(Shader& shader, float deltaTime)
 void Sphere::translate(const glm::vec3& translate)
 {
 	m_translate += translate;
-	body->setPosition(translate);
+	body->setPosition(m_translate);
 }
 
 void Sphere::scale(const float& scale)
@@ -51,8 +51,8 @@ void Sphere::init(float radius)
 {
 	m_radius = radius;
 	std::vector<VertexData> vertexes;
-	float sectorCount = 45;
-	float stackCount = 45;
+	float sectorCount = 72;
+	float stackCount = 72;
 	float x, y, z, xy;
 	float nx, ny, nz, lengthInv = 1.0f / radius;
 	float s, t;

@@ -67,92 +67,117 @@ int main()
 
 
 	Sphere sphere1;
-	sphere1.init(0.5f);
-	sphere1.translate(glm::vec3(0.0f, 7.0f, -3.0f));
+	sphere1.init(1.0f);
+	sphere1.translate(glm::vec3(-3.0f, 7.0f, -3.0f));
 	sphere1.body->setMass(1.0f);
 
-	Sphere sphere2;
-	sphere2.init(0.5f);
-	sphere2.translate(glm::vec3(-3.0f, 7.0f, -3.0f));
-	sphere2.body->setMass(1.0f);
 
-	//Sphere sphere3;
-	//sphere3.init(0.5f);
-	//sphere3.translate(glm::vec3(4.0f, 9.0f, -3.0f));
+	Sphere sphere2;
+	sphere2.init(1.0f);
+	sphere2.translate(glm::vec3(3.0f, 7.0f, -3.0f));
+	sphere2.body->setMass(1.0f);
 
 	Gravity gravity;
 
-	 Plain plane;
-	 plane.init(40.0f, 40.0f);
-	 plane.translate(glm::vec3(0.0f, -7.0f, -3.0f));
+	Plain plane;
+	plane.init(40.0f, 40.0f);
+	plane.translate(glm::vec3(0.0f, -7.0f, -3.0f));
+    plane.body->setStat(false);
 
+	
 	 AABB aabb;
 	 aabb.init(1.0f, 1.0f, 1.0f);
-	 aabb.translate(glm::vec3(4.0f, 7.0f, -3.0f));
+	 aabb.translate(glm::vec3(11.0f, 7.0f, -3.0f));
+	 aabb.body->setMass(5.0f);
 
-	 sphere1.body->AddLinearImpulse(glm::vec3(-3.0f, 7.f, 0.0f));
-	 sphere2.body->AddLinearImpulse(glm::vec3(3.0f, 7.f, 0.0f));
 
-	 sphere1.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(-3.0f, 3000.f, 0.0f));
+	//AABB kek;
+   // kek.init(40.0f, 1.0f, 40.0f);
+	//kek.translate(glm::vec3(0.0f, 0.0f, -3.0f));
+	// kek.setMass(1.0f);
+	//kek.body->setStat(true);
 
-	 aabb.body->addForce(glm::vec3(-1500.0f, 600.f, 0.0f));
-	 aabb.body->setMass(0.1f);
-	 float deltaPhys = 1.0f / 60.0f;
+
+	 sphere1.body->AddLinearImpulse(glm::vec3(18.0f, 10.f, 0.0f));
+	 sphere2.body->AddLinearImpulse(glm::vec3(-8.0f, 10.f, 0.0f));
+
+	 
+
+     //aabb.body->AddLinearImpulse(glm::vec3(-10.0f, 9.f, 0.0f));
+	  aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(-3.0f, 100.f, 0.0f));
+	
+	 float deltaPhys = 1.0f / 40.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
+
+	 sphere1.body->update(deltaPhys);
+	 sphere2.body->update(deltaPhys);
+	 aabb.body->update(deltaPhys);
+
 
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+		
 
 		processInput(window);
 
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-		gravity.updateGravity(sphere1.body);
-		gravity.updateGravity(sphere2.body);
-		//gravity.updateGravity(sphere3.body);
-		gravity.updateGravity(aabb.body);
 		
-		//CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
+		CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
+
 		CollisionDetector::sphereAndTruePlane(sphere1, plane, data);
-		//CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
+		CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
 
-		//CollisionDetector::boxAndPlain(aabb, plane, data);
-			
-
-		//CollisionDetector::boxAndSphere(aabb, sphere1, data);
-		//CollisionDetector::boxAndSphere(aabb, sphere2, data);
+		CollisionDetector::boxAndPlain(aabb, plane, data);
+		
+		
+		
+		
+	  
+		CollisionDetector::boxAndSphere(aabb, sphere2, data);
+	
+		
+	   CollisionDetector::boxAndSphere(aabb, sphere2, data);
 	
 
-	
 
-		if (data->contactArray.size() != 0)
-		{
-			for (int i = 0; i < data->contactArray.size(); ++i)
+	    gravity.updateGravity(sphere1.body);
+	    gravity.updateGravity(sphere2.body);
+	    gravity.updateGravity(aabb.body);
+		
+			if (data->contactArray.empty() == 0)
 			{
-				physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
+				for (int i = 0; i < data->contactArray.size(); ++i)
+				{
+					physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
+				}
+
+				data->contactArray.clear();
 			}
-			data->contactArray.clear();
-		}
-		sphere1.move(deltaPhys);
+		
+		
 		sphere2.move(deltaPhys);
 		aabb.move(deltaPhys);
+		sphere1.move(deltaPhys);
+		//sphere2.move(deltaPhys);
+		//aabb.move(deltaPhys);
+		//plane.move(deltaPhys);
 
 		shader.setMat4("projectionMatrix", projectionMatrix);
 		camera.setViewMatrix(shader);
 		
 		sphere1.draw(shader, deltaPhys);
 		sphere2.draw(shader, deltaPhys);
-		//sphere3.draw(shader, deltaPhys);
+		
 		aabb.draw(shader, deltaPhys);
 		plane.draw(shader, deltaPhys);
-
+	
+	
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

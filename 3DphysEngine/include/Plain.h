@@ -21,6 +21,8 @@ private:
 	glm::quat m_rotate;
 	float m_scale;
 	
+	float m_width;
+	float m_height;
 
 public:
 	RigidBody* body;
@@ -30,6 +32,7 @@ public:
 	void scale(const float& scale) override;
 	void rotate(const glm::quat& rotate) override;
 	void init(float widht,float height);
+	void move(float deltaTime);
 
 	glm::vec3 getDirection() const;
 	glm::vec3 getMin() const;

@@ -19,6 +19,6 @@ public:
 	}
 	void updateGravity(RigidBody* body)
 	{
-		body->addGravity(gravity);
+		body->addForce(gravity * body->getMass());
 	}
 };

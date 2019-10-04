@@ -38,5 +38,11 @@ public:
 
 
 	float computeLambda();
-	void aplly(float lambda);
+	void aplly(const float& lambda);
+
+
+	void apppppply();
+
+	float computeLambdaForOne();
+	void applyForOne(const float& lambda);
 };

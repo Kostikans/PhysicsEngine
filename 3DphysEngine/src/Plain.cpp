@@ -2,10 +2,10 @@
 #pragma once
 
 Plain::Plain()
-	: m_scale(1)
+	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\parket2.0.jpg");
-	body = new RigidBody(RIGIDBODY_TYPE_BOX,0.0f);
+	body = new RigidBody(RIGIDBODY_TYPE_BOX,1.0f);
 }
 
 void Plain::draw(Shader& shader, float deltaTime)
@@ -39,9 +39,9 @@ void Plain::draw(Shader& shader, float deltaTime)
 void Plain::translate(const glm::vec3& translate)
 {
 	m_translate += translate;
-	min += m_translate - min;
-	max += m_translate - max;
 	body->setPosition(translate);
+	min = glm::vec3(body->getPosition().x - m_width,0.0f, body->getPosition().z + m_height);
+	max = glm::vec3(body->getPosition().x + m_width,0.0f,body->getPosition().z - m_height);
 }
 
 void Plain::scale(const float& scale)
@@ -59,6 +59,9 @@ void Plain::init(float width, float height)
 	min = glm::vec3(-width, 0.0f, height);
 	max = glm::vec3(width, 0.0f, -height);
 
+	m_width = width;
+	m_height = height;
+
 	direction = glm::vec3(0.0f, 1.0f, 0.0f);
 	std::vector<VertexData> vertexes;
 
@@ -75,6 +78,11 @@ void Plain::init(float width, float height)
 
 	vbo.allocate(vertexes.data(), vertexes.size() * sizeof(VertexData));
 	ibo.allocate(indices.data(), indices.size() * sizeof(GLuint));	
+}
+
+void Plain::move(float deltaTime)
+{
+	body->update(deltaTime);
 }
 
 glm::vec3 Plain::getDirection() const

@@ -1,59 +1,67 @@
 #include "..\include\RigidBody.h"
 
 RigidBody::RigidBody(int m_type,float m_mass)
-	:rest(0.5f),friction(0.0f),type(m_type)
+	:rest(0.5f),friction(0.0f),type(m_type),stat(true)
 {
+	modelMatrix = glm::mat4x4(1.0f);
 	acceleration = glm::vec3(0.0f);
-	invMass = m_mass;
+	mass = m_mass;
 	float ix;
 	float iy;
 	float iz;
 	float iw;
-	invTensor = glm::mat4x4(0.0f);
-	if (invMass != 0 && type == RIGIDBODY_TYPE_SPHERE) {
+	invTensor = glm::mat3x3(0.0f);
+	if (mass != 0 && type == RIGIDBODY_TYPE_SPHERE) {
 		float r2 = 0.5f * 0.5f;
 		float fraction = (2.0f / 5.0f);
-		ix = r2 * invMass * fraction;
-		iy = r2 * invMass * fraction;
-		iz = r2 * invMass * fraction;
-		iw = 1.0f;
+		ix = r2 * mass * fraction;
+		iy = r2 * mass * fraction;
+		iz = r2 * mass * fraction;
 
-		invTensor[0] = glm::vec4(ix, 0.0f, 0.0f, 0.0f);
-		invTensor[1] = glm::vec4(0.0f, iy, 0.0f, 0.0f);
-		invTensor[2] = glm::vec4(0.0f, 0.0f, iz, 0.0f);
-		invTensor[3] = glm::vec4(0.0f, 0.0f, 0.0f, iw);
+
+		invTensor[0] = glm::vec3(ix, 0.0f, 0.0f);
+		invTensor[1] = glm::vec3(0.0f, iy, 0.0f);
+		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
+
 	}
-	else if (invMass != 0 && type == RIGIDBODY_TYPE_BOX) {
+	else if (mass != 0 && type == RIGIDBODY_TYPE_BOX) {
 		glm::vec3 size = glm::vec3(1.0f,1.0f,1.0f) * 2.0f;
 		float fraction = (1.0f / 12.0f);
 		float x2 = 1.0f;
 		float y2 = 1.0f;
 		float z2 = 1.0f;
-		ix = (y2 + z2) * invMass * fraction;
-		iy = (x2 + z2) * invMass * fraction;
-		iz = (x2 + y2) * invMass * fraction;
-		iw = 1.0f;
+		ix = (y2 + z2) * mass * fraction;
+		iy = (x2 + z2) * mass * fraction;
+		iz = (x2 + y2) * mass * fraction;
 
-		invTensor[0] = glm::vec4(ix, 0.0f, 0.0f, 0.0f);
-		invTensor[1] = glm::vec4(0.0f, iy, 0.0f, 0.0f);
-		invTensor[2] = glm::vec4(0.0f, 0.0f, iz, 0.0f);
-		invTensor[3] = glm::vec4(0.0f, 0.0f, 0.0f, iw);
+
+		invTensor[0] = glm::vec3(ix, 0.0f, 0.0f);
+		invTensor[1] = glm::vec3(0.0f, iy, 0.0f);
+		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
+
 	}
+}
 
-	
+void RigidBody::setStat(bool m_stat)
+{
+	stat = m_stat;
 }
 
 void RigidBody::update(float deltaTime)
 {
-	const float damping = 0.98f;
+	//glm::vec3 delta = position - oldPosition;
+	//oldPosition = position;
+	const float damping = 0.981f;
 	lastFrameAcceleration = acceleration;
-	lastFrameAcceleration += forceAccum ;
+	lastFrameAcceleration += forceAccum * getInverseMass();
 	velocity = velocity + lastFrameAcceleration * deltaTime;
 	velocity = velocity * damping;
 
-	glm::vec3 angAccel = glm::vec3(glm::vec4(torqueAccum,1.0f)  * invTensor);
+	glm::vec3 angAccel = torqueAccum  * invTensor;
 	rotation += angAccel * deltaTime;
-	rotation *= damping;
+
+	velocity *= powf(damping, deltaTime);
+	rotation *= powf(damping - 0.6f, deltaTime);
 
 	glm::quat kek;
 	kek.w = 0.0f;
@@ -63,7 +71,8 @@ void RigidBody::update(float deltaTime)
 	kek *= orientation;
 	orientation += kek;
 
-	position = position + velocity * deltaTime;
+	position += velocity * deltaTime ;
+
 	calculateData();
 	clearForces();
 }
@@ -77,8 +86,7 @@ void RigidBody::AddRotationalImpulse(const glm::vec3& point, const glm::vec3& im
 {
 	glm::vec3 centerOfMass = position;
 	glm::vec3 torque = glm::cross(point - centerOfMass, impulse);
-	glm::vec4 angAccel = invTensor * glm::vec4(torque,1.0f);
-	torqueAccum += glm::vec3(angAccel);
+	torqueAccum += invTensor * torque;
 }
 
 
@@ -107,9 +115,14 @@ glm::quat RigidBody::getOrientation() const
 	return orientation;
 }
 
+void RigidBody::setRotation(const glm::vec3& m_rotate)
+{
+	rotation = m_rotate;
+}
+
 float RigidBody::getInverseMass() const
 {
-	return invMass;
+	return 1.0f/ mass;
 }
 
 float RigidBody::getFriction() const
@@ -120,6 +133,11 @@ float RigidBody::getFriction() const
 float RigidBody::getRest() const
 {
 	return rest;
+}
+
+float RigidBody::getMass() const
+{
+	return mass;
 }
 
 void RigidBody::setVelocity(const glm::vec3& m_velocity)
@@ -134,7 +152,7 @@ void RigidBody::addTorque(const glm::vec3& m_torque)
 
 void RigidBody::addForce(const glm::vec3& m_force)
 {
-	forceAccum += m_force * invMass;
+	forceAccum += m_force ;
 }
 
 void RigidBody::addGravity(const glm::vec3& m_gravity)
@@ -159,10 +177,10 @@ void RigidBody::setOrientation(const glm::quat& m_orientation)
 
 void RigidBody::setMass(const float& m_mass)
 {
-	invMass = m_mass;
+	mass = m_mass;
 }
 
-glm::mat4x4 RigidBody::getInvInersiaTensor() const
+glm::mat3x3 RigidBody::getInvInersiaTensor() const
 {
 	return invTensor;
 }
@@ -187,6 +205,7 @@ void RigidBody::calculateData()
 {
 	modelMatrix = glm::mat4x4(1.0f);
 	orientation = glm::normalize(orientation);
+
 	modelMatrix = glm::translate(modelMatrix, position);
 	modelMatrix *= glm::toMat4(orientation);
 }

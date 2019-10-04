@@ -2,7 +2,7 @@
 #include "..\include\AABB.h"
 
 AABB::AABB()
-	: m_scale(1)
+	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\8640003215_50cc68f8cf_b.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_BOX,1.0f);
@@ -31,7 +31,8 @@ void AABB::draw(Shader& shader, float deltaTime)
 void AABB::translate(const glm::vec3& translate)
 {
 	m_translate += translate;
-	body->setPosition(translate);
+	body->setPosition(m_translate);
+	
 }
 
 void AABB::scale(const float& scale)
@@ -46,8 +47,10 @@ void AABB::rotate(const glm::quat& rotate)
 
 void AABB::init(float width, float height, float depth)
 {
-	min = glm::vec3(-width,-height, depth);
-	max = glm::vec3(width, height, -depth);
+
+	width = 1.0f;
+	height = 1.0f;
+	depth = 1.0f;
 	m_width = width;
 	m_height = height;
 	m_depth = depth;
@@ -135,12 +138,14 @@ glm::vec3 AABB::getPosition() const
 	return body->getPosition();
 }
 
+glm::vec3 AABB::halfSize() const
+{
+	return glm::vec3(m_width,m_height,m_depth);
+}
+
 void AABB::move(float deltaTime)
 {
 	body->update(deltaTime);
-
-	min = glm::vec3(body->getPosition().x - m_width, body->getPosition().y - m_height, body->getPosition().z + m_depth);
-	max = glm::vec3(body->getPosition().x + m_width, body->getPosition().y + m_height, body->getPosition().z - m_depth);
 }
 
 glm::vec3 AABB::getMin() const

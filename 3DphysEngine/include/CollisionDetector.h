@@ -12,4 +12,5 @@ public:
 	static bool boxAndPlain(const AABB& aabb, const Plain& plane, CollisionData* data);
 	static bool sphereAndTruePlane(const Sphere& sphere, const Plain& plane, CollisionData* data);
 	static bool sphereAndSphere(const Sphere& one, const Sphere& two, CollisionData* data);
+	static bool boxAndBox(const AABB& box1, const AABB& box2, CollisionData* data);
 };

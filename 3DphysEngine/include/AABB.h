@@ -44,6 +44,6 @@ public:
 	float getDepth() const;
 	glm::vec3 getPosition() const;
 
-
+	glm::vec3 halfSize() const;
 	void move(float deltaTime);
 };
