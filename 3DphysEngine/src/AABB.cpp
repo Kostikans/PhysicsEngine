@@ -47,13 +47,13 @@ void AABB::rotate(const glm::quat& rotate)
 
 void AABB::init(float width, float height, float depth)
 {
-
-	width = 1.0f;
-	height = 1.0f;
-	depth = 1.0f;
 	m_width = width;
 	m_height = height;
 	m_depth = depth;
+
+	m_normX = glm::vec3(1.0f, 0.0f, 0.0f);
+	m_normY = glm::vec3(0.0f, 1.0f, 0.0f);
+	m_normZ = glm::vec3(0.0f, 0.0f, 1.0f);
 	std::vector<VertexData> vertexes;
 
 	vertexes.push_back(VertexData(glm::vec3(-width, height, depth), glm::vec2(0.0f, height), glm::vec3(0.0f, 0.0f, 1.0f)));
@@ -118,6 +118,21 @@ glm::vec3 AABB::getMax() const
 	return max;
 }
 
+glm::vec3 AABB::getNormX() const
+{
+	return m_normX;
+}
+
+glm::vec3 AABB::getNormY() const
+{
+	return m_normY;
+}
+
+glm::vec3 AABB::getNormZ() const
+{
+	return m_normZ;
+}
+
 float AABB::getWidth() const
 {
 	return m_width;
@@ -146,6 +161,9 @@ glm::vec3 AABB::halfSize() const
 void AABB::move(float deltaTime)
 {
 	body->update(deltaTime);
+	m_normX = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normX, 1.0f)));
+	m_normY = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normY, 1.0f)));
+	m_normZ = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normZ, 1.0f)));
 }
 
 glm::vec3 AABB::getMin() const

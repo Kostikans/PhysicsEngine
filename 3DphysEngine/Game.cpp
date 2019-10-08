@@ -12,9 +12,11 @@
 #include "include/Gravity.h"
 #include "include/CollisionData.h"
 #include "include/EngineRoutine.h"
+#include "gtc/constants.hpp"
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 const GLint WIDTH = 800, HEIGHT = 600;
@@ -82,20 +84,21 @@ int main()
 	Plain plane;
 	plane.init(40.0f, 40.0f);
 	plane.translate(glm::vec3(0.0f, -7.0f, -3.0f));
+	//plane.rotate(glm::normalize(glm::quat(glm::angleAxis(glm::radians(15.0f),glm::vec3(1.0f,0.0f,0.0f)))));
     plane.body->setStat(false);
 
 	
 	 AABB aabb;
 	 aabb.init(1.0f, 1.0f, 1.0f);
-	 aabb.translate(glm::vec3(11.0f, 7.0f, -3.0f));
+	 aabb.translate(glm::vec3(10.0f, 16.0f, -3.0f));
 	 aabb.body->setMass(5.0f);
 
 
-	//AABB kek;
-   // kek.init(40.0f, 1.0f, 40.0f);
-	//kek.translate(glm::vec3(0.0f, 0.0f, -3.0f));
-	// kek.setMass(1.0f);
-	//kek.body->setStat(true);
+	 AABB kek;
+     kek.init(1.0f, 1.0f, 1.0f);
+	 kek.translate(glm::vec3(5.0f, 10.0f, -3.0f));
+	 kek.body->setMass(5.0f);
+
 
 
 	 sphere1.body->AddLinearImpulse(glm::vec3(18.0f, 10.f, 0.0f));
@@ -103,24 +106,34 @@ int main()
 
 	 
 
-     //aabb.body->AddLinearImpulse(glm::vec3(-10.0f, 9.f, 0.0f));
-	  aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(-3.0f, 100.f, 0.0f));
+     aabb.body->AddLinearImpulse(glm::vec3(-3.0f, 0.f, 0.0f));
+	 aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(-3.0f, -100.f, 0.0f));
+
+	 kek.body->AddLinearImpulse(glm::vec3(3.0f, 5.f, 0.0f));
 	
 	 float deltaPhys = 1.0f / 40.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
 
-	 sphere1.body->update(deltaPhys);
-	 sphere2.body->update(deltaPhys);
-	 aabb.body->update(deltaPhys);
 
+	 aabb.body->update(deltaPhys);
+	 kek.body->update(deltaPhys);
+	 plane.body->update(deltaPhys);
+	 glfwSwapInterval(1);
 
 	while (!glfwWindowShouldClose(window))
 	{
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+		glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	
+		projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
 		
 
 		processInput(window);
@@ -128,42 +141,48 @@ int main()
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
+		//CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
 
-		CollisionDetector::sphereAndTruePlane(sphere1, plane, data);
-		CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
+		//CollisionDetector::sphereAndTruePlane(sphere1, plane, data);
+		//CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
 
-		CollisionDetector::boxAndPlain(aabb, plane, data);
+		//CollisionDetector::boxAndPlain(aabb, plane, data);
+		//CollisionDetector::boxAndPlain(kek, plane, data);
 		
 		
-		
+		//if (CollisionDetector::boxAndBox(aabb, kek, data) == false)
+		///{
+		//	kek.move(deltaPhys);
+		//	aabb.move(deltaPhys);
+		//}
 		
 	  
-		CollisionDetector::boxAndSphere(aabb, sphere2, data);
-	
-		
-	   CollisionDetector::boxAndSphere(aabb, sphere2, data);
+		//CollisionDetector::boxAndSphere(aabb, sphere1, data);
+		//CollisionDetector::boxAndSphere(kek, sphere1, data);
+		//CollisionDetector::boxAndSphere(kek, sphere2, data);
+	    //CollisionDetector::boxAndSphere(aabb, sphere2, data);
 	
 
 
 	    gravity.updateGravity(sphere1.body);
 	    gravity.updateGravity(sphere2.body);
 	    gravity.updateGravity(aabb.body);
+		gravity.updateGravity(kek.body);
 		
-			if (data->contactArray.empty() == 0)
+		if (data->contactArray.empty() == 0)
+		{
+			for (int i = 0; i < data->contactArray.size(); ++i)
 			{
-				for (int i = 0; i < data->contactArray.size(); ++i)
-				{
-					physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
-				}
-
-				data->contactArray.clear();
+				physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
 			}
-		
-		
+			data->contactArray.clear();
+		}
+			
+
 		sphere2.move(deltaPhys);
 		aabb.move(deltaPhys);
 		sphere1.move(deltaPhys);
+		kek.move(deltaPhys);
 		//sphere2.move(deltaPhys);
 		//aabb.move(deltaPhys);
 		//plane.move(deltaPhys);
@@ -171,11 +190,11 @@ int main()
 		shader.setMat4("projectionMatrix", projectionMatrix);
 		camera.setViewMatrix(shader);
 		
-		sphere1.draw(shader, deltaPhys);
-		sphere2.draw(shader, deltaPhys);
-		
-		aabb.draw(shader, deltaPhys);
-		plane.draw(shader, deltaPhys);
+		sphere1.draw(shader, deltaTime);
+		sphere2.draw(shader, deltaTime);
+		kek.draw(shader, deltaTime);
+		aabb.draw(shader, deltaTime);
+		plane.draw(shader, deltaTime);
 	
 	
 		glfwSwapBuffers(window);
@@ -224,3 +243,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	camera.ProcessMouseScroll(yoffset);
 }
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+

@@ -6,7 +6,7 @@
 Sphere::Sphere()
 	: m_scale(1.0f)
 {
-	texture = new Texture("E:\\download\\45614125-bcb2ce00-ba68-11e8-903b-f22addb83ca5.jpg");
+	texture = new Texture("/45614125-bcb2ce00-ba68-11e8-903b-f22addb83ca5.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_SPHERE,1.0f);
 }
 

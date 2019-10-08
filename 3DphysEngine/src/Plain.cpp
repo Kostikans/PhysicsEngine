@@ -40,8 +40,6 @@ void Plain::translate(const glm::vec3& translate)
 {
 	m_translate += translate;
 	body->setPosition(translate);
-	min = glm::vec3(body->getPosition().x - m_width,0.0f, body->getPosition().z + m_height);
-	max = glm::vec3(body->getPosition().x + m_width,0.0f,body->getPosition().z - m_height);
 }
 
 void Plain::scale(const float& scale)
@@ -52,6 +50,9 @@ void Plain::scale(const float& scale)
 void Plain::rotate(const glm::quat& rotate)
 {
 	m_rotate *= rotate;
+	body->setOrientation(rotate);
+	body->update(1.0f/40.0f);
+	direction = glm::normalize(glm::vec3(glm::toMat4(m_rotate) * glm::vec4(direction,1.0f)));
 }
 
 void Plain::init(float width, float height)
@@ -85,6 +86,16 @@ void Plain::move(float deltaTime)
 	body->update(deltaTime);
 }
 
+float Plain::getWidth() const
+{
+	return m_width;
+}
+
+float Plain::getHeight() const
+{
+	return m_height;
+}
+
 glm::vec3 Plain::getDirection() const
 {
 	return direction;
@@ -102,5 +113,5 @@ glm::vec3 Plain::getMax() const
 
 glm::vec3 Plain::getPosition() const
 {
-	return m_translate;
+	return body->getPosition();
 }

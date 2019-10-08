@@ -17,6 +17,10 @@ private:
 	float m_height;
 	float m_depth;
 
+
+	glm::vec3 m_normX;
+	glm::vec3 m_normY;
+	glm::vec3 m_normZ;
 	float m_scale;
 
 	glm::vec3 m_translate;
@@ -39,6 +43,9 @@ public:
 
 	glm::vec3 getMin() const;
 	glm::vec3 getMax() const;
+	glm::vec3 getNormX() const;
+	glm::vec3 getNormY() const;
+	glm::vec3 getNormZ() const;
 	float getWidth() const;
 	float getHeight() const;
 	float getDepth() const;

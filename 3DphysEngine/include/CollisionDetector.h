@@ -13,4 +13,7 @@ public:
 	static bool sphereAndTruePlane(const Sphere& sphere, const Plain& plane, CollisionData* data);
 	static bool sphereAndSphere(const Sphere& one, const Sphere& two, CollisionData* data);
 	static bool boxAndBox(const AABB& box1, const AABB& box2, CollisionData* data);
+	static bool overLapOnAxis(const AABB& box1, const AABB& box2, const glm::vec3 axis);
+	static float transformToAxis(const AABB& box, const glm::vec3 axis);
+	static float sgn(float& x);
 };

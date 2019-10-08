@@ -34,6 +34,8 @@ public:
 	void init(float widht,float height);
 	void move(float deltaTime);
 
+	float getWidth() const;
+	float getHeight() const;
 	glm::vec3 getDirection() const;
 	glm::vec3 getMin() const;
 	glm::vec3 getMax() const;
