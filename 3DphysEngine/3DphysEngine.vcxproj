@@ -167,6 +167,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="glew32.dll" />
+    <None Include="Shaders\Debug.fs" />
+    <None Include="Shaders\Debug.vs" />
     <None Include="Shaders\Fragment.fs" />
     <None Include="Shaders\Vertex.vs" />
   </ItemGroup>

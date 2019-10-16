@@ -14,15 +14,4 @@ public:
 	float tolerance;
 
 	CollisionData() {};
-	void addContacts(unsigned count)
-	{
-		contactsLeft -= count;
-		contactCount += count;
-	}
-	void reset(unsigned maxContacts)
-	{
-		contactsLeft = maxContacts;
-		contactCount = 0;
-		
-	}
 };

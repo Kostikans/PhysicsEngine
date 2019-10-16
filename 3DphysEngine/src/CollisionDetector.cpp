@@ -1,6 +1,9 @@
+#define _USE_MATH_DEFINES
 #include "..\include\CollisionDetector.h"
 #include <iostream>
-#define SGN(x) sgn(x)
+#include <cmath>
+#include <algorithm>
+
 
 bool CollisionDetector::sphereAndSphere(const Sphere& one, const Sphere& two, CollisionData* data)
 {
@@ -15,38 +18,105 @@ bool CollisionDetector::sphereAndSphere(const Sphere& one, const Sphere& two, Co
 
 	Contact* contact = new Contact;
 	contact->contactNormal = normal;
-	contact->contactPoint = one.getPosition() + dist * 0.5f;
+	contact->contactPoints.push_back(one.getPosition() + dist * 0.5f);
 	contact->penetration = r - LengDist;
 	contact->setBodyData(one.body, two.body, 0.0f, 0.8f);
 	data->contactArray.push_back(std::move(contact));
-	data->addContacts(1);
+
 
 	return true;
 }
 
-bool CollisionDetector::boxAndBox(const AABB& box1, const AABB& box2, CollisionData* data)
+float CollisionDetector::penetrationOnAxis(const AABB& box1, const AABB& box2, const glm::vec3& axis, bool *isFlip)
 {
 	glm::vec3 VerBox1[8] =
 	{
+		glm::vec3(box1.halfSize().x  , box1.halfSize().y  , box1.halfSize().z),
+		glm::vec3(-box1.halfSize().x  , box1.halfSize().y  ,  box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  ,  -box1.halfSize().y  , box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  ,  box1.halfSize().y  ,  -box1.halfSize().z),
 		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  ,  box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  , -box1.halfSize().y  ,  -box1.halfSize().z),
 		glm::vec3(-box1.halfSize().x  ,  box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  ,  box1.halfSize().y  ,  box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  , -box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  , -box1.halfSize().y  ,  box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  ,  box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  ,  box1.halfSize().y  ,  box1.halfSize().z)
+		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  ,  box1.halfSize().z)
 	};
 	glm::vec3 VerBox2[8] =
 	{
+		glm::vec3(box2.halfSize().x  , box2.halfSize().y  , box2.halfSize().z),
+		glm::vec3(-box2.halfSize().x  , box2.halfSize().y  ,  box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  ,  -box2.halfSize().y  , box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  ,  box2.halfSize().y  ,  -box2.halfSize().z),
 		glm::vec3(-box2.halfSize().x  , -box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  , -box2.halfSize().y  ,  box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  , -box2.halfSize().y  ,  -box2.halfSize().z),
 		glm::vec3(-box2.halfSize().x  ,  box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  ,  box2.halfSize().y  ,  box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  , -box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  , -box2.halfSize().y  ,  box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  ,  box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  ,  box2.halfSize().y  ,  box2.halfSize().z)
+		glm::vec3(-box2.halfSize().x  ,  -box2.halfSize().y  ,  box2.halfSize().z)
+	};
+	
+	for (int i = 0; i < 8; ++i)
+	{
+		VerBox1[i] = glm::vec3(box1.body->getModelMatrix() * glm::vec4(VerBox1[i], 1.0f));
+		VerBox2[i] = glm::vec3(box2.body->getModelMatrix() * glm::vec4(VerBox2[i], 1.0f));
+	}
+
+	float resultMin1;
+	float resultMax1;
+	float resultMin2;
+	float resultMax2;
+	resultMin1 = resultMax1 = glm::dot(axis, VerBox1[0]);
+	resultMin2 = resultMax2 = glm::dot(axis, VerBox2[0]);
+
+	for (int i = 1; i < 8; ++i) {
+		float projection = glm::dot(axis, VerBox1[i]);
+		resultMin1 = (projection < resultMin1) ? projection : resultMin1;
+		resultMax1 = (projection > resultMax1) ? projection : resultMax1;
+	}
+
+	for (int i = 1; i < 8; ++i) {
+		float projection = glm::dot(axis, VerBox2[i]);
+		resultMin2 = (projection < resultMin2) ? projection : resultMin2;
+		resultMax2 = (projection > resultMax2) ? projection : resultMax2;
+	}
+
+	if (!((resultMin2 <= resultMax1) && (resultMin1 <= resultMax2))) {
+		return 0.0f; 
+	}
+
+	float len1 = resultMax1 - resultMin1;
+	float len2 = resultMax2 - resultMin2;
+	float min = fminf(resultMin1, resultMin2);
+	float max = fmaxf(resultMax1, resultMax2);
+	float length = max - min;
+
+	if (isFlip != 0) {
+		*isFlip = (resultMin2 < resultMin1);
+	}
+
+	return (len1 + len2) - length;
+}
+
+bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionData* data)
+{
+	glm::vec3 VerBox1[8] =
+	{
+		glm::vec3(box1.halfSize().x  , box1.halfSize().y  , box1.halfSize().z),
+		glm::vec3(-box1.halfSize().x  , box1.halfSize().y  ,  box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  ,  -box1.halfSize().y  , box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  ,  box1.halfSize().y  ,  -box1.halfSize().z),
+		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  , -box1.halfSize().z),
+		glm::vec3(box1.halfSize().x  , -box1.halfSize().y  ,  -box1.halfSize().z),
+		glm::vec3(-box1.halfSize().x  ,  box1.halfSize().y  , -box1.halfSize().z),
+		glm::vec3(-box1.halfSize().x  , - box1.halfSize().y  ,  box1.halfSize().z)
+	};
+	glm::vec3 VerBox2[8] =
+	{
+		glm::vec3(box2.halfSize().x  , box2.halfSize().y  , box2.halfSize().z),
+		glm::vec3(-box2.halfSize().x  , box2.halfSize().y  ,  box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  ,  -box2.halfSize().y  , box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  ,  box2.halfSize().y  ,  -box2.halfSize().z),
+		glm::vec3(-box2.halfSize().x  , -box2.halfSize().y  , -box2.halfSize().z),
+		glm::vec3(box2.halfSize().x  , -box2.halfSize().y  ,  -box2.halfSize().z),
+		glm::vec3(-box2.halfSize().x  ,  box2.halfSize().y  , -box2.halfSize().z),
+		glm::vec3(-box2.halfSize().x  ,  -box2.halfSize().y  ,  box2.halfSize().z)
 	};
 	for (int i = 0; i < 8; ++i)
 	{
@@ -55,176 +125,194 @@ bool CollisionDetector::boxAndBox(const AABB& box1, const AABB& box2, CollisionD
 	}
 	glm::vec3 toCenter = box2.getPosition() - box1.getPosition();
 
-	glm::vec3 n1 = box1.getNormX();
-	glm::vec3 n2 = box1.getNormY();
-	glm::vec3 n3 = box1.getNormZ();
-					
-	glm::vec3 n4 = box2.getNormX();
-	glm::vec3 n5 = box2.getNormY();
-	glm::vec3 n6 = box2.getNormZ();
+	std::vector<glm::vec3> normals;
+	normals.push_back(box1.getNormX());
+	normals.push_back(box1.getNormY());
+	normals.push_back(box1.getNormZ());
+	normals.push_back(box2.getNormX());
+	normals.push_back(box2.getNormY());
+	normals.push_back(box2.getNormZ());
 
-	glm::vec3 n7  = glm::cross(n1,n4);
-	glm::vec3 n8  = glm::cross(n1,n5);
-	glm::vec3 n9  = glm::cross(n1,n6);
-					
-	glm::vec3 n10 = glm::cross(n2,n4);
-	glm::vec3 n11 = glm::cross(n2,n5);
-	glm::vec3 n12 = glm::cross(n2,n6);
-					
-	glm::vec3 n13 = glm::cross(n3,n4);
-	glm::vec3 n14 = glm::cross(n3,n5);
-	glm::vec3 n15 = glm::cross(n3,n6);
-
-	float Rxx = glm::dot(n1, n4);
-	float Rxy = glm::dot(n1, n5);
-	float Rxz = glm::dot(n1, n6);
-	float Ryx = glm::dot(n5, n1);
-	float Ryy = glm::dot(n2, n5);
-	float Ryz = glm::dot(n2, n6);
-	float Rzz = glm::dot(n3, n6);
-	float Rzy = glm::dot(n3, n5);
-	float Rzx = glm::dot(n3, n4);
-
-	float offset1;
-	float offset2;
-	float offset3;
-	float offset4;
-	float offset5;
-	float offset6;
-	float offset7;
-	float offset8; 
-	float offset9;
-	float offset10;
-	float offset11;
-	float offset12;
-	float offset13;
-	float offset14;
-	float offset15;
-
-	offset1 = box1.halfSize().x + fabs(box2.halfSize().x * Rxx)
-		+ fabs(box2.halfSize().y * Rxy) + fabs(box2.halfSize().z * Rxz);
-	if (fabs(glm::dot(toCenter, n1)) > offset1)
-			return false;
-
-	offset2 = box1.halfSize().y + fabs(box2.halfSize().x * Ryx)
-		+ fabs(box2.halfSize().y * Ryy) + fabs(box2.halfSize().z * Ryz);
-	if (fabs(glm::dot(toCenter, n2)) > offset2)
-			return false;
-
-	offset3 = box1.halfSize().z + fabs(box2.halfSize().x * Rzx)
-		+ fabs(box2.halfSize().y * Rzy) + fabs(box2.halfSize().z * Rzz);
-	if (fabs(glm::dot(toCenter, n3)) > offset3)
-			return false;
-
-	offset4 = box2.halfSize().x + fabs(box1.halfSize().x * Rxx)
-		+ fabs(box1.halfSize().y * Ryx) + fabs(box1.halfSize().z * Rzx);
-	if (fabs(glm::dot(toCenter, n4)) > offset4)
-			return false;
-
-	offset5 = box2.halfSize().y + fabs(box1.halfSize().x * Rxy)
-		+ fabs(box1.halfSize().y * Ryy) + fabs(box1.halfSize().z * Rzy);
-	if (fabs(glm::dot(toCenter, n5)) > offset5)
-			return false;
-
-	offset6 = box2.halfSize().z + fabs(box1.halfSize().x * Rxz)
-		+ fabs(box1.halfSize().y * Ryz) + fabs(box1.halfSize().z * Rzz);
-	if (fabs(glm::dot(toCenter, n6)) > offset6)
-			return false;
-
-	offset7 = box1.halfSize().y * Rzx
-		+ fabs(box1.halfSize().z * Ryx)
-		+ fabs(box2.halfSize().y * Rxz)
-		+ fabs(box2.halfSize().z * Rxy);
-	if (fabs(glm::dot(toCenter, glm::cross(n1,n4))) > offset7)
-			return false;
-
-	offset8 = box1.halfSize().y * Rzy
-		+ fabs(box1.halfSize().z * Ryy)
-		+ fabs(box2.halfSize().x * Rxy)
-		+ fabs(box2.halfSize().z * Rxx);
-	if (fabs(glm::dot(toCenter, glm::cross(n1, n5))) > offset8)
-		return false;
-
-	offset9 = box1.halfSize().y * Rzz
-		+ fabs(box1.halfSize().z * Ryz)
-		+ fabs(box2.halfSize().x * Rxy)
-		+ fabs(box2.halfSize().y * Rxx);
-	if (fabs(glm::dot(toCenter, glm::cross(n1, n6))) > offset9)
-		return false;
-
-	offset10 = box1.halfSize().x * Rzx
-		+ fabs(box1.halfSize().z * Rxx)
-		+ fabs(box2.halfSize().y * Ryz)
-		+ fabs(box2.halfSize().z * Ryy);
-	if (fabs(glm::dot(toCenter, glm::cross(n2, n4))) > offset10)
-		return false;
-
-	offset11 = box1.halfSize().x * Rzy
-		+ fabs(box1.halfSize().z * Rxy)
-		+ fabs(box2.halfSize().x * Ryz)
-		+ fabs(box2.halfSize().z * Ryx);
-	if (fabs(glm::dot(toCenter, glm::cross(n2, n5))) > offset11)
-		return false;
-
-	offset12 = box1.halfSize().x * Rzz
-		+ fabs(box1.halfSize().z * Rxz)
-		+ fabs(box2.halfSize().x * Ryy)
-		+ fabs(box2.halfSize().y * Ryx);
-	if (fabs(glm::dot(toCenter, glm::cross(n2, n6))) > offset12)
-		return false;
-
-	offset13 = box1.halfSize().x * Ryx
-		+ fabs(box1.halfSize().y* Rxx)
-		+ fabs(box2.halfSize().y* Rzz)
-		+ fabs(box2.halfSize().z * Rzy);
-	if (fabs(glm::dot(toCenter, glm::cross(n3, n4))) > offset13)
-		return false;
-
-	offset14 = box1.halfSize().x * Ryy
-		+ fabs(box1.halfSize().y * Rxy)
-		+ fabs(box2.halfSize().x * Rzz)
-		+ fabs(box2.halfSize().z * Rzx);
-	if (fabs(glm::dot(toCenter, glm::cross(n3, n5))) > offset14)
-		return false;
-
-	offset15 = box1.halfSize().x * Ryz
-		+ fabs(box1.halfSize().y* Rxz)
-		+ fabs(box2.halfSize().x* Rzy)
-		+ fabs(box2.halfSize().z* Rzx);
-	if (fabs(glm::dot(toCenter, glm::cross(n3, n6))) > offset15)
-		return false;
-	float max;
+	if ((normals[0] != normals[3]))
+	{
+		normals.push_back(glm::cross(normals[0], normals[3]));
+		normals.push_back(glm::cross(normals[0], normals[4]));
+		normals.push_back(glm::cross(normals[0], normals[5]));
+	}
+	if ((normals[1] != normals[4]))
+	{
+		normals.push_back(glm::cross(normals[1], normals[3]));
+		normals.push_back(glm::cross(normals[1], normals[4]));
+		normals.push_back(glm::cross(normals[1], normals[5]));
+	}
+	if ((normals[2] != normals[5]))
+	{
+		normals.push_back(glm::cross(normals[2], normals[3]));
+		normals.push_back(glm::cross(normals[2], normals[4]));
+		normals.push_back(glm::cross(normals[2], normals[5]));
+	}
 	
+
+	bool isflip;
+	float penetration = 1000.0f;
+	glm::vec3 hitNormal;
+	for (int i = 0; i < normals.size(); ++i)
+	{
+		float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
+		if (depth <= 0.0f)
+			return false;
+		else if (depth < penetration) {
+			if (isflip) {
+				//normals[i] = normals[i] * -1.0f;
+			}
+			penetration = depth;
+			hitNormal = normals[i];
+		}
+	}
+	if (hitNormal == glm::vec3(0.0f))
+		return false;
+
+	glm::vec3 axis = glm::normalize(hitNormal);
+	std::vector<Line> edges1;
+	std::vector<Line> edges2;
+
+	/*int index[][2] = {
+		{1,6},{3,6},{4,6},{7,2},{2,5},{2,0},
+		{1,0},{0,3},{7,1},{7,4},{4,5},{3,5}
+	};*/
+	int index[][2] = { 
+		{ 6, 1 },{ 6, 3 },{ 6, 4 },{ 2, 7 },{ 2, 5 },{ 2, 0 },
+		{ 0, 1 },{ 0, 3 },{ 7, 1 },{ 7, 4 },{ 4, 5 },{ 5, 3 }
+	};
+
+	for (int j = 0; j < 12; ++j) 
+	{
+		edges1.push_back(Line(VerBox1[index[j][0]] , VerBox1[index[j][1]]));
+		edges2.push_back(Line(VerBox2[index[j][0]] , VerBox2[index[j][1]]));
+	}
+
+	std::vector<Plane> plane1;
+
+	plane1.push_back(Plane(normals[0]           , glm::dot(normals[0], box1.getPosition() + normals[0] * box1.halfSize().x)));
+	plane1.push_back(Plane(normals[0]  * -1.0f  , -glm::dot(normals[0], box1.getPosition() - normals[0] * box1.halfSize().x)));
+	plane1.push_back(Plane(normals[1]           , glm::dot(normals[1], box1.getPosition() + normals[1] * box1.halfSize().y)));
+	plane1.push_back(Plane(normals[1]  * -1.0f  , -glm::dot(normals[1], box1.getPosition() - normals[1] * box1.halfSize().y)));
+	plane1.push_back(Plane(normals[2]           , glm::dot(normals[2], box1.getPosition() + normals[2] * box1.halfSize().z)));
+	plane1.push_back(Plane(normals[2]  * -1.0f  , -glm::dot(normals[2], box1.getPosition() - normals[2] * box1.halfSize().z)));
+									      																				
+
+	std::vector<Plane> plane2;
+
+	plane2.push_back(Plane(normals[3]           , glm::dot(normals[3], box2.getPosition() + normals[3] * box2.halfSize().x)));
+	plane2.push_back(Plane(normals[3]  * -1.0f  , -glm::dot(normals[3], box2.getPosition() - normals[3] * box2.halfSize().x)));
+	plane2.push_back(Plane(normals[4]           , glm::dot(normals[4], box2.getPosition() + normals[4] * box2.halfSize().y)));
+	plane2.push_back(Plane(normals[4]  * -1.0f  , -glm::dot(normals[4], box2.getPosition() - normals[4] * box2.halfSize().y)));
+	plane2.push_back(Plane(normals[5]           , glm::dot(normals[5], box2.getPosition() + normals[5] * box2.halfSize().z)));
+	plane2.push_back(Plane(normals[5]  * -1.0f  , -glm::dot(normals[5], box2.getPosition() - normals[5] * box2.halfSize().z)));
+
+	std::vector<glm::vec3> points2 = clipEdges(edges1, plane2, box2);
+	std::vector<glm::vec3> points1 = clipEdges(edges2, plane1, box1);
+
+
+	float resultMin1;
+	float resultMax1;
+	resultMin1 = resultMax1 = glm::dot(axis, VerBox1[0]);
+	for (int i = 1; i < 8; ++i) {
+		float projection = glm::dot(axis, VerBox1[i]);
+		resultMin1 = (projection < resultMin1) ? projection : resultMin1;
+		resultMax1 = (projection > resultMax1) ? projection : resultMax1;
+	}
+	float distance = (resultMax1 - resultMin1) * 0.5f - penetration * 0.5f;
+	glm::vec3 pointOnPlane = box1.getPosition() + axis * distance;
+
+	Contact* contact = new Contact;
+	contact->contactNormal = axis;
+	contact->penetration = penetration ;
+
+	for (int i = 0; i < points1.size(); ++i)
+		contact->contactPoints.push_back(points1[i]  + (axis * glm::dot(axis, pointOnPlane - points1[i])));
+	for (int i = 0; i < points2.size(); ++i)
+		contact->contactPoints.push_back(points2[i] +  (axis * glm::dot(axis, pointOnPlane - points2[i])));
+
+	for (int i = contact->contactPoints.size() - 1; i >= 0; --i)
+	{
+		for (int j = contact->contactPoints.size() - 1; j > i; --j)
+		{
+			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.0001f) 
+			{
+				contact->contactPoints.erase(contact->contactPoints.begin() + j);
+				break;
+			}
+		}
+	}
+
+	contact->setBodyData(box2.body, box1.body, 0.0f, 0.2f);
+	data->contactArray.push_back(std::move(contact));
 	return true;
+}
+
+std::vector<glm::vec3> CollisionDetector::clipEdges(const std::vector<Line>& edges, const std::vector<Plane> & planes, const AABB& box)
+{
+	std::vector<glm::vec3> result;
+
+	glm::vec3 intersection;
+	for (int i = 0; i < planes.size(); ++i) {
+		for (int j = 0; j < edges.size(); ++j) {
+			if (clipPlane(edges[j], planes[i], &intersection)) {
+				if (PointInOBB(intersection, box)) {
+					result.push_back(intersection);
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+bool CollisionDetector::PointInOBB(const glm::vec3& point, const AABB& obb)
+{
+	glm::vec3 dir = point - obb.getPosition();
+	glm::vec3 normals[3];
+	normals[0] = obb.getNormX();
+	normals[1] = obb.getNormY();
+	normals[2] = obb.getNormZ();
+	float half[3];
+	half[0] = obb.halfSize().x;
+	half[1] = obb.halfSize().y;
+	half[2] = obb.halfSize().z;
+	for (int i = 0; i < 3; ++i) {
 	
+		float distance = glm::dot(dir, normals[i]);
+
+		if (distance > half[i]) {
+			return false;
+		}
+		if (distance < -half[i]) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
-bool CollisionDetector::overLapOnAxis(const AABB& box1, const AABB& box2, const glm::vec3 axis)
+bool CollisionDetector::clipPlane(const Line &edge, const Plane &plane, glm::vec3* intersectionPoint)
 {
-	float oneProject = transformToAxis(box1, axis);
-	float twoProject = transformToAxis(box2, axis);
+	glm::vec3 ab = edge.end - edge.start;
 
-	glm::vec3 toCenter = box2.getPosition() - box1.getPosition();
-	float distance = fabs(glm::dot(toCenter , axis));
-	return (distance < oneProject + twoProject);
-}
+	float nA = glm::dot(plane.normal, edge.start);
+	float nAB = glm::dot(plane.normal, ab);
 
-float CollisionDetector::transformToAxis(const AABB& box, const glm::vec3 axis)
-{
-	return  fabs(glm::dot(axis , (box.getNormX() * box.halfSize().x))) +
-			fabs(glm::dot(axis , (box.getNormY() * box.halfSize().y))) +
-			fabs(glm::dot(axis , (box.getNormZ() * box.halfSize().z)));
-}
+	
+	float t = (plane.offset - nA) / nAB;
+	if (t >= 0.0f && t <= 1.0f) {
+		if (intersectionPoint != nullptr)
+		{
+			*intersectionPoint = edge.start + ab * t;
+		}
+		return true;
+	}
 
-float CollisionDetector::sgn(float& x)
-{
-	if (x > 0)
-		return (std::move(x));
-	else
-		if (x == 0.0f)
-			return 0.0f;
-		else
-			return (std::move(-x));
+	return false;
 }
 
 bool CollisionDetector::sphereAndTruePlane(const Sphere& sph2,const Plain& plane , CollisionData* data)
@@ -254,10 +342,10 @@ bool CollisionDetector::sphereAndTruePlane(const Sphere& sph2,const Plain& plane
 	Contact* contact = new Contact;
 	contact->contactNormal = plane.getDirection();
 	contact->penetration = penetration;
-	contact->contactPoint = position - plane.getDirection() * centerDistance;
+	contact->contactPoints.push_back(position - plane.getDirection() * centerDistance);
 	contact->setBodyData(sph2.body, plane.body, 0.0f, 1.0f);
 	data->contactArray.push_back(std::move(contact));
-	data->addContacts(1);
+
 	return true;
 }
 
@@ -297,10 +385,10 @@ bool CollisionDetector::boxAndSphere(const AABB& aabb, const Sphere& sphere, Col
 	Contact* contact = new Contact;
 	contact->contactNormal = glm::normalize(center - closestPtWorld);
 	contact->penetration = sphere.getRadius() - sqrtf(dist);
-	contact->contactPoint = closestPtWorld;
-	contact->setBodyData(sphere.body, aabb.body, 0.0f, 0.6f);
+	contact->contactPoints.push_back(closestPtWorld);
+	contact->setBodyData(sphere.body, aabb.body, 0.0f, 0.7f);
 	data->contactArray.push_back(std::move(contact));
-	data->addContacts(1);
+
 	return true; 
 }
 
@@ -321,28 +409,43 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, Collis
 	{
 		Vertexes[i] = glm::vec3(aabb.body->getModelMatrix() * glm::vec4(Vertexes[i], 1.0f));
 	}
-	bool collide = false;
-	for (int i = 0; i < 8; ++i)
-	{
-		glm::vec3 VertexPos = Vertexes[i];
-		float vertexDistance = glm::dot(VertexPos, plane.getDirection());
-		float offset = glm::dot(plane.getDirection(), plane.getPosition());
-		if (vertexDistance < offset)
-		{
-			if (glm::length(VertexPos - plane.getPosition()) > plane.getWidth() ||
-				glm::length(VertexPos - plane.getPosition()) > plane.getHeight())
-				return false;
-			collide = true;
-			Contact* contact = new Contact;
-			contact->contactNormal = plane.getDirection();
-			contact->penetration = offset - vertexDistance;
-			contact->contactPoint = plane.getDirection() * (offset - vertexDistance) + VertexPos;
+	
+	float offset = glm::dot(plane.getDirection(), plane.getPosition());
 
-			contact->setBodyData(aabb.body, plane.body, 0.0f, 0.5f);
-			data->contactArray.push_back(std::move(contact));
-			data->addContacts(1);
+	bool collide = false;
+	float pLen = aabb.halfSize().x * fabsf(glm::dot(plane.getDirection(), aabb.getNormX())) +
+		aabb.halfSize().y * fabsf(glm::dot(plane.getDirection(), aabb.getNormY())) +
+		aabb.halfSize().z * fabsf(glm::dot(plane.getDirection(), aabb.getNormZ()));
+
+	float dist = glm::dot(plane.getDirection(), aabb.getPosition()) - offset;
+
+	if (fabsf(dist) <= pLen)
+	{
+
+		Contact* contact = new Contact;
+		contact->contactNormal = plane.getDirection();
+		for (int i = 0; i < 8; ++i)
+		{
+			glm::vec3 VertexPos = Vertexes[i];
+			float vertexDistance = glm::dot(VertexPos, plane.getDirection());
+			if (vertexDistance < offset)
+			{
+				if (glm::length(VertexPos - plane.getPosition()) > plane.getWidth() ||
+					glm::length(VertexPos - plane.getPosition()) > plane.getHeight())
+					return false;
+				
+	
+				contact->contactPoints.push_back(plane.getDirection() * (offset - vertexDistance) + VertexPos);
+				contact->penetration = offset - vertexDistance;
+				
+			}
 		}
+		contact->contactNormal = plane.getDirection();
+
+		contact->setBodyData(aabb.body, plane.body, 0.0f, 0.1f);
+		data->contactArray.push_back(std::move(contact));
 	}
+
 	return collide;
 
 

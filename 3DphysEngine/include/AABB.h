@@ -4,12 +4,16 @@
 #include "Texture.h"
 #include "RigidBody.h"
 
+const float LINE_WIDTH = 2.0f;
+
 class AABB : public Transformation
 {
 private:
 	VertexBuffer vbo;
+	VertexBuffer normalVbo;
 	IndexBuffer ibo;
 	VertexAttribBuffer vao;
+	VertexAttribBuffer normalVao;
 	Texture* texture;
 	glm::vec3 min;
 	glm::vec3 max;
@@ -31,6 +35,7 @@ private:
 public:
 	RigidBody* body;
 	AABB();
+	void drawNormal(Shader& shader);
 	void draw(Shader& shader, float deltaTime) override;
 	void translate(const glm::vec3& translate) override;
 	void scale(const float& scale) override;

@@ -1,4 +1,5 @@
 #include "..\include\RigidBody.h"
+#include <iostream>
 
 RigidBody::RigidBody(int m_type,float m_mass)
 	:rest(0.5f),friction(0.0f),type(m_type),stat(true)
@@ -51,7 +52,7 @@ void RigidBody::update(float deltaTime)
 {
 	//glm::vec3 delta = position - oldPosition;
 	//oldPosition = position;
-	const float damping = 0.981f;
+	const float damping = 0.98f;
 	lastFrameAcceleration = acceleration;
 	lastFrameAcceleration += forceAccum * getInverseMass();
 	velocity = velocity + lastFrameAcceleration * deltaTime;
@@ -63,13 +64,20 @@ void RigidBody::update(float deltaTime)
 	velocity *= powf(damping, deltaTime);
 	rotation *= powf(damping - 0.6f, deltaTime);
 
+
+
+
+
 	glm::quat kek;
 	kek.w = 0.0f;
 	kek.x = rotation.x * deltaTime;
 	kek.y = rotation.y * deltaTime;
 	kek.z = rotation.z * deltaTime;
 	kek *= orientation;
+	kek *= 0.5f;
 	orientation += kek;
+
+	
 
 	position += velocity * deltaTime ;
 

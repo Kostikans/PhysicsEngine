@@ -12,21 +12,23 @@ public:
 
 	float friction;
 	float restitution;
-	glm::vec3 contactPoint;
 	glm::vec3 contactNormal;
 	float penetration;
- 
+	std::vector <glm::vec3> contactPoints;
 
 	void setBodyData(RigidBody* one, RigidBody* two, float friction, float restitution);
 
-	glm::vec3 calculateFrictionlessImpulse(glm::mat3x3 *inverseInertiaTensor);
-	glm::vec3 calculateFrictionImpulse(glm::mat3x3 *inverseInertiaTensor);
+	
+	static float LinearProjectionPercent;
+	static float PenetrationSlack;
 
 
+	float computeLambda(int c,glm::vec3 v1, glm::vec3 r1, glm::vec3 v2, glm::vec3 r2);
+	void aplly(const float& lambda, int c);
 
-	float computeLambda();
-	void aplly(const float& lambda);
+	float computeLambdaForOne(int c , glm::vec3 v , glm::vec3 r);
+	void applyForOne(const float& lambda , int c);
 
-	float computeLambdaForOne();
-	void applyForOne(const float& lambda);
+	void resolvePosition();
+	void resolvePositionForOne();
 };

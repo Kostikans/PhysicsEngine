@@ -19,7 +19,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
-const GLint WIDTH = 800, HEIGHT = 600;
+const GLint WIDTH = 1024, HEIGHT = 768;
 
 Camera camera(glm::vec3(glm::vec3(0.0f, 7.0f, 3.0f)));
 bool firstMouse = true;
@@ -59,12 +59,15 @@ int main()
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	Shader debugShader("Shaders//Debug.vs", "Shaders//Debug.fs");
 	Shader shader("Shaders//Vertex.vs", "Shaders//Fragment.fs");
+
 	
 
 	glm::mat4x4 projectionMatrix = glm::mat4x4(1.0f);
 	projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	shader.setMat4("projectionMatrix", projectionMatrix);
+
 
 
 
@@ -90,14 +93,14 @@ int main()
 	
 	 AABB aabb;
 	 aabb.init(1.0f, 1.0f, 1.0f);
-	 aabb.translate(glm::vec3(10.0f, 16.0f, -3.0f));
-	 aabb.body->setMass(5.0f);
+	 aabb.translate(glm::vec3(6.0f, 3.0f, -3.0f));
+	 aabb.body->setMass(10.0f);
 
 
 	 AABB kek;
      kek.init(1.0f, 1.0f, 1.0f);
-	 kek.translate(glm::vec3(5.0f, 10.0f, -3.0f));
-	 kek.body->setMass(5.0f);
+	 kek.translate(glm::vec3(6.0f, 7.0f, -3.0f));
+	 kek.body->setMass(10.0f);
 
 
 
@@ -106,16 +109,17 @@ int main()
 
 	 
 
-     aabb.body->AddLinearImpulse(glm::vec3(-3.0f, 0.f, 0.0f));
-	 aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(-3.0f, -100.f, 0.0f));
+     aabb.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, 0.0f));
+	// aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(0.0, 400.f, 0.0f));
 
-	 kek.body->AddLinearImpulse(glm::vec3(3.0f, 5.f, 0.0f));
+	// kek.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(0.0f, -700.f, 0.0f));
+	 kek.body->addTorque(glm::vec3(700.0f, 0.0f, 0.0f));
+	 kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, 0.0f));
 	
-	 float deltaPhys = 1.0f / 40.0f;
+	 float deltaPhys = 1.0f / 50.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
-
 
 	 aabb.body->update(deltaPhys);
 	 kek.body->update(deltaPhys);
@@ -142,25 +146,26 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		//CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
-
+		
 		//CollisionDetector::sphereAndTruePlane(sphere1, plane, data);
 		//CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
+		
+		CollisionDetector::boxAndPlain(aabb, plane, data);
+		CollisionDetector::boxAndPlain(kek, plane, data);
+	
+		
+		
 
-		//CollisionDetector::boxAndPlain(aabb, plane, data);
-		//CollisionDetector::boxAndPlain(kek, plane, data);
-		
-		
-		//if (CollisionDetector::boxAndBox(aabb, kek, data) == false)
-		///{
-		//	kek.move(deltaPhys);
-		//	aabb.move(deltaPhys);
-		//}
-		
+		if (CollisionDetector::boxVsBox(aabb,kek, data) == false)
+		{
+			//kek.move(deltaPhys);
+			//aabb.move(deltaPhys);
+		}
 	  
 		//CollisionDetector::boxAndSphere(aabb, sphere1, data);
 		//CollisionDetector::boxAndSphere(kek, sphere1, data);
 		//CollisionDetector::boxAndSphere(kek, sphere2, data);
-	    //CollisionDetector::boxAndSphere(aabb, sphere2, data);
+		//CollisionDetector::boxAndSphere(aabb, sphere2, data);
 	
 
 
@@ -182,20 +187,32 @@ int main()
 		sphere2.move(deltaPhys);
 		aabb.move(deltaPhys);
 		sphere1.move(deltaPhys);
-		kek.move(deltaPhys);
+	     kek.move(deltaPhys);
 		//sphere2.move(deltaPhys);
 		//aabb.move(deltaPhys);
 		//plane.move(deltaPhys);
 
+		debugShader.use();
+		debugShader.setMat4("projectionMatrix", projectionMatrix);
+		camera.setViewMatrix(debugShader);
+		kek.drawNormal(debugShader);
+		aabb.drawNormal(debugShader);
+
+
+		shader.use();
 		shader.setMat4("projectionMatrix", projectionMatrix);
 		camera.setViewMatrix(shader);
+
 		
 		sphere1.draw(shader, deltaTime);
 		sphere2.draw(shader, deltaTime);
 		kek.draw(shader, deltaTime);
 		aabb.draw(shader, deltaTime);
 		plane.draw(shader, deltaTime);
-	
+
+
+
+
 	
 		glfwSwapBuffers(window);
 		glfwPollEvents();

@@ -8,6 +8,34 @@ AABB::AABB()
 	body = new RigidBody(RIGIDBODY_TYPE_BOX,1.0f);
 }
 
+void AABB::drawNormal(Shader& shader)
+{
+	shader.use();
+	
+
+	AttribLayout layout1;
+	layout1.push<float>(3);
+	normalVao.pushLayout(layout1, normalVbo);
+
+	glm::vec3 xAxis = glm::vec3(1.0f, 0.0f, 0.0f);
+	glm::vec3 yAxis = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 zAxis = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	glm::mat4x4 model = glm::mat4x4(1.0f);
+	model = glm::translate(model, m_translate);
+	shader.setMat4("modelMatrix", model);
+	shader.setVec3("AxisColor",xAxis);
+	
+	normalVbo.bind();
+	glLineWidth((GLfloat)LINE_WIDTH);
+	glDrawArrays(GL_LINES, 0, 2);
+	shader.setVec3("AxisColor", yAxis);
+	glDrawArrays(GL_LINES, 2, 2);
+	shader.setVec3("AxisColor", zAxis);
+	glDrawArrays(GL_LINES, 4, 2);
+	normalVbo.unbind();
+}
+
 void AABB::draw(Shader& shader, float deltaTime)
 {
 	shader.use();
@@ -25,7 +53,7 @@ void AABB::draw(Shader& shader, float deltaTime)
 
 	ibo.bind(); 
 	glDrawElements(GL_TRIANGLES, ibo.size(), GL_UNSIGNED_INT, 0);
-	ibo.unbind();
+	ibo.unbind();	
 }
 
 void AABB::translate(const glm::vec3& translate)
@@ -86,6 +114,15 @@ void AABB::init(float width, float height, float depth)
 	vertexes.push_back(VertexData(glm::vec3(width, -height, depth), glm::vec2(width, height), glm::vec3(0.0f, -1.0f, 0.0f)));
 	vertexes.push_back(VertexData(glm::vec3(width, -height, -depth), glm::vec2(width, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
+	std::vector<glm::vec3> normals;
+
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(m_normX * LINE_WIDTH);
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(m_normY * LINE_WIDTH);
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(m_normZ * LINE_WIDTH);
+	
 
 	std::vector<GLuint> indices;
 	for (int i = 0; i < 24; i += 4) {
@@ -96,10 +133,10 @@ void AABB::init(float width, float height, float depth)
 		indices.push_back(i + 1);
 		indices.push_back(i + 3);
 	}
-
-
 	vbo.allocate(vertexes.data(), vertexes.size() * sizeof(VertexData));
 	ibo.allocate(indices.data(), indices.size() * sizeof(GLuint));
+
+	normalVbo.allocate(normals.data(), normals.size() * sizeof(glm::vec3));
 }
 
 void AABB::setMass(const float & m_mass)
@@ -160,10 +197,26 @@ glm::vec3 AABB::halfSize() const
 
 void AABB::move(float deltaTime)
 {
+	m_translate = body->getPosition();
+	glm::vec3 normx = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(1.0f,0.0f,0.0f, 1.0f));
+	glm::vec3 normy = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+	glm::vec3 normz = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+
+	std::vector<glm::vec3> normals;
+
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(normx * LINE_WIDTH);
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(normy * LINE_WIDTH);
+	normals.push_back(glm::vec3(0.0f));
+	normals.push_back(normz * LINE_WIDTH);
+	normalVbo.allocate(normals.data(), normals.size() * sizeof(glm::vec3));
+
+	m_normX = normx;
+	m_normY = normy;
+	m_normZ = normz;
+
 	body->update(deltaTime);
-	m_normX = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normX, 1.0f)));
-	m_normY = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normY, 1.0f)));
-	m_normZ = glm::normalize(glm::vec3(glm::toMat4(body->getOrientation()) * glm::vec4(m_normZ, 1.0f)));
 }
 
 glm::vec3 AABB::getMin() const
