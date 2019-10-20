@@ -17,8 +17,9 @@ public:
 	{
 		gravity = m_gravity;
 	}
-	void updateGravity(RigidBody* body)
+	void updateGravity(RigidBody* body, float deltaTime)
 	{
 		body->addForce(gravity * body->getMass());
+		//body->update(deltaTime);
 	}
 };

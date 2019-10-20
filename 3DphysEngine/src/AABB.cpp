@@ -1,11 +1,11 @@
 #include <iostream>
 #include "..\include\AABB.h"
 
-AABB::AABB()
+AABB::AABB(float mass)
 	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\8640003215_50cc68f8cf_b.jpg");
-	body = new RigidBody(RIGIDBODY_TYPE_BOX,1.0f);
+	body = new RigidBody(RIGIDBODY_TYPE_BOX,mass);
 }
 
 void AABB::drawNormal(Shader& shader)
@@ -170,6 +170,26 @@ glm::vec3 AABB::getNormZ() const
 	return m_normZ;
 }
 
+glm::vec3 AABB::getAxis(int index) const
+{
+	if (index == 0)
+		return m_normX;
+	if (index == 1)
+		return m_normY;
+	if (index == 2)
+		return m_normZ;
+}
+
+float AABB::halfsize(int index) const
+{
+	if (index == 0)
+		return m_width;
+	if (index == 1)
+		return m_height;
+	if (index == 2)
+		return m_depth;
+}
+
 float AABB::getWidth() const
 {
 	return m_width;
@@ -197,6 +217,8 @@ glm::vec3 AABB::halfSize() const
 
 void AABB::move(float deltaTime)
 {
+
+	body->update(deltaTime);
 	m_translate = body->getPosition();
 	glm::vec3 normx = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(1.0f,0.0f,0.0f, 1.0f));
 	glm::vec3 normy = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -216,7 +238,7 @@ void AABB::move(float deltaTime)
 	m_normY = normy;
 	m_normZ = normz;
 
-	body->update(deltaTime);
+	
 }
 
 glm::vec3 AABB::getMin() const

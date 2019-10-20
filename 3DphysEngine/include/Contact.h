@@ -23,12 +23,10 @@ public:
 	static float PenetrationSlack;
 
 
-	float computeLambda(int c,glm::vec3 v1, glm::vec3 r1, glm::vec3 v2, glm::vec3 r2);
-	void aplly(const float& lambda, int c);
+	float computeLambda(int c);
+	void aplly(const float lambda, int c);
 
-	float computeLambdaForOne(int c , glm::vec3 v , glm::vec3 r);
-	void applyForOne(const float& lambda , int c);
+	void apllyImpulses(int c);
 
 	void resolvePosition();
-	void resolvePositionForOne();
 };

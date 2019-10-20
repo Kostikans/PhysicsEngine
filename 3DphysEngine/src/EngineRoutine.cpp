@@ -11,62 +11,41 @@ EngineRoutine::EngineRoutine()
 
 void EngineRoutine::resolveContacts(Contact* contacts, unsigned numContacts, float duration)
 {
+	/*for (int i = 0; i < contacts->contactPoints.size(); ++i)
+	{
+		glm::vec3 r1 = contacts->contactPoints[i] - contacts->body[0]->getPosition();
+		glm::vec3 r2 = contacts->contactPoints[i] - contacts->body[1]->getPosition();
 
+		glm::vec3 relativeVel = (contacts->body[1]->getVelocity() + glm::cross(contacts->body[1]->getRotation(), r2)) - 
+			(contacts->body[0]->getVelocity() + glm::cross(contacts->body[0]->getRotation(), r1));
+		glm::vec3 relativeNorm = glm::normalize(relativeNorm);
 
-	glm::vec3 relativeVelocity = contacts->body[0]->getVelocity();
-	relativeVelocity = contacts->body[0]->getVelocity() - contacts->body[1]->getVelocity() ;
-	 if (glm::dot(relativeVelocity, contacts->contactNormal) > 0 && contacts->body[1]->stat == true)
-		return;
-	 /*else
-	 {
-		 relativeVelocity = contacts->body[0]->getVelocity();
-		 if (glm::dot(relativeVelocity, contacts->contactNormal) > 0)
-			 return;
+		if (glm::dot(relativeVel, relativeNorm) > 0.0f)
+		{
+			return;
+		}
 	}*/
-
-	 glm::vec3 vel1 = contacts->body[0]->getVelocity();
-	 glm::vec3 rot1 = contacts->body[0]->getRotation();
-	 glm::vec3 vel2 = contacts->body[1]->getVelocity();
-	 glm::vec3 rot2 = contacts->body[1]->getRotation();
-	 for (int j = 0; j < 1; ++j)
-	 {	
-	
-		 accumulatedImpulse = 0.0f;
-		 for (int i = 0; i < contacts->contactPoints.size(); ++i)
-		 {
-			
-			 if (contacts->body[1]->stat == true)
-			 {
-				 lambda = contacts->computeLambda(i,vel1,rot1,vel2,rot2);
+	 accumulatedImpulse = 0.0f;
+	 for (int j = 0; j < 15; ++j)
+	 {
+		 
+			for (int i = 0; i < contacts->contactPoints.size(); ++i)
+			{
+				
+			    /* lambda = contacts->computeLambda(i);
 				 accumulatedImpulse += lambda;
-				if (accumulatedImpulse < 0.0f)
-				{
-					 lambda += (0.0f - accumulatedImpulse);
-					 accumulatedImpulse = 0.0f;
-				 }
-				 contacts->aplly(lambda, i);
-			 }
-			 else
-			 {			
-				 lambda = contacts->computeLambdaForOne(i,vel1,rot1);	
-				 accumulatedImpulse += lambda;
-				 if (accumulatedImpulse < 0.0f)
-				 {
-					lambda += (0.0f - accumulatedImpulse);
-				    accumulatedImpulse = 0.0f;
-				 }
-				 contacts->applyForOne(lambda, i);
-			 }
-		 }
-		 //contacts->body[0]->update(duration);
-		 //contacts->body[1]->update(duration);
+			     if (accumulatedImpulse < 0.0f)
+			     {
+			        lambda += (0.0f - accumulatedImpulse);
+			        accumulatedImpulse = 0.0f;
+			     }*/
+				 if (lambda < 0)
+					 continue;
+			     contacts->aplly(lambda, i);
+			     //contacts->apllyImpulses(i);
+				 
+			}	 
 	 }
-
-	if (contacts->body[1]->stat == false)
-		contacts->resolvePositionForOne();
-
-	else
-		contacts->resolvePosition();
-
+    contacts->resolvePosition();
 	contacts->contactPoints.clear();
 }

@@ -123,5 +123,7 @@
     <None Include="Shaders\Fragment.fs" />
     <None Include="Shaders\Debug.fs" />
     <None Include="Shaders\Debug.vs" />
+    <None Include="Shaders\ContactPoint.vs" />
+    <None Include="Shaders\ContactPoint.fs" />
   </ItemGroup>
 </Project>

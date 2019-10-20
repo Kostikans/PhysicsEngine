@@ -34,7 +34,7 @@ private:
 
 public:
 	RigidBody* body;
-	AABB();
+	AABB(float mass);
 	void drawNormal(Shader& shader);
 	void draw(Shader& shader, float deltaTime) override;
 	void translate(const glm::vec3& translate) override;
@@ -51,6 +51,9 @@ public:
 	glm::vec3 getNormX() const;
 	glm::vec3 getNormY() const;
 	glm::vec3 getNormZ() const;
+
+	glm::vec3 getAxis(int index) const;
+	float halfsize(int index) const;
 	float getWidth() const;
 	float getHeight() const;
 	float getDepth() const;

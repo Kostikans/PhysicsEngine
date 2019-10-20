@@ -26,7 +26,7 @@ private:
 
 public:
 	RigidBody* body;
-	Plain();
+	Plain(float mass);
 	void draw(Shader& shader, float deltaTime) override;
 	void translate(const glm::vec3& translate) override;
 	void scale(const float& scale) override;

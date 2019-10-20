@@ -1,11 +1,11 @@
 #include "..\include\Plain.h"
 #pragma once
 
-Plain::Plain()
+Plain::Plain(float mass)
 	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\parket2.0.jpg");
-	body = new RigidBody(RIGIDBODY_TYPE_BOX,1.0f);
+	body = new RigidBody(RIGIDBODY_TYPE_BOX,mass);
 }
 
 void Plain::draw(Shader& shader, float deltaTime)

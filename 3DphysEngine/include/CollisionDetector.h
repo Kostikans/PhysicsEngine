@@ -4,14 +4,15 @@
 #include "Sphere.h"
 #include "AABB.h"
 #include "Plain.h"
+#include "Contact.h"
+
 struct Line {
 public:
 	glm::vec3 start;
 	glm::vec3 end;
-	Line(glm::vec3 m_start, glm::vec3 m_end)
+	Line(const glm::vec3& m_start, const glm::vec3& m_end)
+		:start(m_start), end(m_end)
 	{
-		start = m_start;
-		end = m_end;
 	}
 };
 struct Plane
@@ -19,10 +20,9 @@ struct Plane
 public:
 	float offset;
 	glm::vec3 normal;
-	Plane(glm::vec3 m_normal,float m_offset)
+	Plane(const glm::vec3 &m_normal,float m_offset)
+		:offset(m_offset),normal(m_normal)
 	{
-		offset = m_offset;
-		normal = m_normal;
 	}
 };
 class CollisionDetector
@@ -37,6 +37,15 @@ public:
 	static float penetrationOnAxis(const AABB& box1, const AABB& box2, const glm::vec3& axis, bool *isFlip);
 	static bool boxVsBox(const AABB& box1, const AABB& box2, CollisionData* data);
 	static std::vector<glm::vec3> clipEdges(const std::vector<Line>& edges, const std::vector<Plane> &planes, const AABB& box);
-	static bool clipPlane(const Line &edge, const Plane &plane, glm::vec3 *intersectionPoint);
+	static bool clipPlane(const Line &edge, const Plane &plane, glm::vec3 *intersectionPoint, const AABB& box);
 	static bool PointInOBB(const glm::vec3& point, const AABB& obb);
+
+
+	static float penetrationOnAxis(const AABB& box1, const AABB& box2, const glm::vec3& axis, const glm::vec3& toCentre);
+	static float transformToAxis(const AABB& box, const glm::vec3& axis);
+	static bool tryAxis(const AABB& box1, const AABB& box2,  glm::vec3& axis, const glm::vec3& toCentre, unsigned index, float& smallestPenetration, unsigned& smallestCase);
+
+	static bool boxAndBox(const AABB& box1, const AABB& box2, CollisionData* data);
+	static void fillPointFaceBoxBox(const AABB& box1, const AABB& box2, const glm::vec3& toCentre, CollisionData* data, unsigned best, float pen);
+	static glm::vec3 contactPoint(const glm::vec3& pOne, const glm::vec3& dOne, float oneSize, const glm::vec3& pTwo, const glm::vec3& dTwo, float towSize , bool useOne);
 };

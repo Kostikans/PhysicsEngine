@@ -13,7 +13,7 @@ RigidBody::RigidBody(int m_type,float m_mass)
 	float iw;
 	invTensor = glm::mat3x3(0.0f);
 	if (mass != 0 && type == RIGIDBODY_TYPE_SPHERE) {
-		float r2 = 0.5f * 0.5f;
+		float r2 = 1.0f * 1.0f;
 		float fraction = (2.0f / 5.0f);
 		ix = r2 * mass * fraction;
 		iy = r2 * mass * fraction;
@@ -23,14 +23,15 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor[0] = glm::vec3(ix, 0.0f, 0.0f);
 		invTensor[1] = glm::vec3(0.0f, iy, 0.0f);
 		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
+		
 
 	}
 	else if (mass != 0 && type == RIGIDBODY_TYPE_BOX) {
 		glm::vec3 size = glm::vec3(1.0f,1.0f,1.0f) * 2.0f;
 		float fraction = (1.0f / 12.0f);
-		float x2 = 1.0f;
-		float y2 = 1.0f;
-		float z2 = 1.0f;
+		float x2 = size.y * size.y;
+		float y2 = size.y * size.y;
+		float z2 = size.y * size.y;
 		ix = (y2 + z2) * mass * fraction;
 		iy = (x2 + z2) * mass * fraction;
 		iz = (x2 + y2) * mass * fraction;
@@ -39,8 +40,12 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor[0] = glm::vec3(ix, 0.0f, 0.0f);
 		invTensor[1] = glm::vec3(0.0f, iy, 0.0f);
 		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
-
+		
 	}
+	if (mass != 0.0f)
+		invTensor = glm::inverse(invTensor);
+	else
+		invTensor = glm::mat3x3(0.0f);
 }
 
 void RigidBody::setStat(bool m_stat)
@@ -52,17 +57,37 @@ void RigidBody::update(float deltaTime)
 {
 	//glm::vec3 delta = position - oldPosition;
 	//oldPosition = position;
-	const float damping = 0.98f;
-	lastFrameAcceleration = acceleration;
-	lastFrameAcceleration += forceAccum * getInverseMass();
+	const float damping = 0.97f;
+
+	lastFrameAcceleration = forceAccum * getInverseMass();
 	velocity = velocity + lastFrameAcceleration * deltaTime;
 	velocity = velocity * damping;
 
+	if (fabsf(velocity.x) < 0.01f) {
+		velocity.x = 0.0f;
+	}
+	if (fabsf(velocity.y) < 0.01f) {
+		velocity.y = 0.0f;
+	}
+	if (fabsf(velocity.z) < 0.01f) {
+		velocity.z = 0.0f;
+	}
+
 	glm::vec3 angAccel = torqueAccum  * invTensor;
 	rotation += angAccel * deltaTime;
+	rotation *= damping;
 
-	velocity *= powf(damping, deltaTime);
-	rotation *= powf(damping - 0.6f, deltaTime);
+	if (fabsf(rotation.x) < 0.01f) {
+		rotation.x = 0.0f;
+	}
+	if (fabsf(rotation.y) < 0.01f) {
+		rotation.y = 0.0f;
+	}
+	if (fabsf(rotation.z) < 0.01f) {
+		rotation.z = 0.0f;
+	}
+	//velocity *= powf(damping, deltaTime);
+	//rotation *= powf(damping , deltaTime);
 
 
 
@@ -130,7 +155,10 @@ void RigidBody::setRotation(const glm::vec3& m_rotate)
 
 float RigidBody::getInverseMass() const
 {
-	return 1.0f/ mass;
+	if (mass == 0.0f)
+		return 0.0f;
+	else
+		return 1.0f/ mass;
 }
 
 float RigidBody::getFriction() const
@@ -186,6 +214,11 @@ void RigidBody::setOrientation(const glm::quat& m_orientation)
 void RigidBody::setMass(const float& m_mass)
 {
 	mass = m_mass;
+}
+
+void RigidBody::setInverseMass(const float m_mass)
+{
+	
 }
 
 glm::mat3x3 RigidBody::getInvInersiaTensor() const
