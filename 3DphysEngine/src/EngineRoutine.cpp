@@ -1,14 +1,15 @@
 #include "..\include\EngineRoutine.h"
+#include "..\include\CollisionDetector.h"
 
 
 EngineRoutine::EngineRoutine()
 {
 	accumulatedImpulse = 0.0f;
-
+	data = new CollisionData;
 	lambda =0.0f;
 }
 
-void EngineRoutine::resolveContacts(Contact* contacts, unsigned numContacts, float duration)
+void EngineRoutine::resolveContacts(Contact* contacts, float duration)
 {
 	/*for (int i = 0; i < contacts->contactPoints.size(); ++i)
 	{
@@ -46,31 +47,67 @@ void EngineRoutine::resolveContacts(Contact* contacts, unsigned numContacts, flo
 		int kek = 0;
 	}
  	 accumulatedImpulse = 0.0f;
-	 for (int j = 0; j < 30; ++j)
+	 for (int j = 0; j < 15; ++j)
 	 {
 		 
 			for (int i = 0; i < contacts->contactPoints.size(); ++i)
 			{
 				
-			  //   lambda = contacts->computeLambda(i);
-				 ///*accumulatedImpulse += lambda;
-			  //   if (accumulatedImpulse < 0.0f)
-			  //   {
-			  //      lambda += (0.0f - accumulatedImpulse);
-			  //      accumulatedImpulse = 0.0f;
-			  //   }*/
-				 //if (lambda < 0)
-					// continue;
-			  //   contacts->aplly(lambda, i);
-			  //   //contacts->apllyImpulses(i);
+				/* accumulatedImpulse += lambda;
+			     if (accumulatedImpulse < 0.0f)
+			     {
+			        lambda += (0.0f - accumulatedImpulse);
+			        accumulatedImpulse = 0.0f;
+			     }	*/
 				float lambda = contacts->kekCompute(i, projects[i]);
-				if (lambda < 0)
+				if (lambda < 0.0f)
 					continue;
 				contacts->kekApply(lambda, i);
 				 
 			}	 
-	 }
-	
-     contacts->resolvePosition();
-	contacts->contactPoints.clear();
+	 }	
+    contacts->resolvePosition();
+}
+
+void EngineRoutine::run(float deltaTime)
+{
+	for (int i = 0; i < objects.size(); ++i)
+	{
+		gravity.updateGravity(objects[i], deltaTime);
+	}
+	for (int i = 0; i < objects.size(); ++i)
+	{
+		RigidBody* current = objects[i];
+		for (int j = 0; j < objects.size(); ++j)
+		{
+			if (j == i)
+				continue;
+
+		}
+	}
+	for (int i = 0; data->contactArray.size(); ++i)
+	{
+		if (data->contactArray.empty() == 0)
+		{
+			for (int i = 0; i < data->contactArray.size(); ++i)
+			{
+				this->resolveContacts(data->contactArray[i],  deltaTime);
+			}
+			data->contactArray.clear();
+		}
+	}
+	for (int i = 0; i < objects.size(); ++i)
+	{
+		objects[i]->update(deltaTime);
+	}
+}
+
+void EngineRoutine::addEntity(Transformation* obj)
+{
+	objects.push_back(obj);
+}
+
+void EngineRoutine::setData(CollisionData* data)
+{
+	this->data = data;
 }

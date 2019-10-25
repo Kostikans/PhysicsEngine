@@ -18,7 +18,6 @@ void IndexBuffer::allocate(const void * m_data, GLsizei size)
 	glGenBuffers(1, &ID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, m_data, GL_STATIC_DRAW);
-
 }
 
 GLsizei IndexBuffer::size()

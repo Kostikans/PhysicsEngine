@@ -2,7 +2,7 @@
 
 #include "Transformation.h"
 #include "Texture.h"
-#include "RigidBody.h"
+
 
 class Sphere : public Transformation
 {
@@ -17,18 +17,20 @@ private:
 	glm::vec3 m_translate;
 	glm::quat m_rotate;
  
+	int type;
 	
 public:
+
 	RigidBody* body;
 	Sphere();
 	void draw(Shader& shader, float deltaTime) override;
 	void translate(const glm::vec3& translate) override;
 	void scale(const float& scale) override;
 	void rotate(const glm::quat& rotate) override;
+	void move(float deltaTime) override;
+	int getType() override;
+
 	void init(float radius);
-
-	void move(float deltaTime);
-
 	float getRadius() const;
-	 glm::vec3 getPosition() const;
+	glm::vec3 getPosition() const;
 };

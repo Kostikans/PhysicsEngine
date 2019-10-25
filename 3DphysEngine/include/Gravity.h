@@ -20,6 +20,5 @@ public:
 	void updateGravity(RigidBody* body, float deltaTime)
 	{
 		body->addForce(gravity * body->getMass());
-		//body->update(deltaTime);
 	}
 };

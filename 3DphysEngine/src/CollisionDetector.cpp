@@ -36,204 +36,6 @@ bool CollisionDetector::tryAxis(const AABB& box1, const AABB& box2,  glm::vec3& 
 	return true;
 }
 
-bool CollisionDetector::boxAndBox(const AABB& box1, const AABB& box2, CollisionData* data)
-{
-	glm::vec3 toCentre = box2.getPosition() - box1.getPosition();
-
-	float pen = 1000.0f;
-	unsigned best = 160;
-
-	glm::vec3 n1 = box1.getNormX();
-	glm::vec3 n2 = box1.getNormY();
-	glm::vec3 n3 = box1.getNormZ();
-	glm::vec3 n4 = box2.getNormX();
-	glm::vec3 n5 = box2.getNormY();
-	glm::vec3 n6 = box2.getNormZ();
-
-	glm::vec3 n7 = glm::cross(n1, n3);
-	glm::vec3 n8 = glm::cross(n1, n4);
-	glm::vec3 n9 = glm::cross(n1, n5);
-	glm::vec3 n10 = glm::cross(n2, n3);
-	glm::vec3 n11 = glm::cross(n2, n4);
-	glm::vec3 n12 = glm::cross(n2, n5);
-	glm::vec3 n13 = glm::cross(n3, n3);
-	glm::vec3 n14 = glm::cross(n3, n4);
-	glm::vec3 n15 = glm::cross(n3, n5);
-
-
-	if (!tryAxis(box1, box2, n1 , toCentre, 0, pen, best))  return false;
-	if (!tryAxis(box1, box2, n2, toCentre, 1, pen, best))   return false;
-	if (!tryAxis(box1, box2, n3, toCentre, 2, pen, best))   return false;
-	if (!tryAxis(box1, box2, n4, toCentre, 3, pen, best))   return false;
-	if (!tryAxis(box1, box2, n5, toCentre, 4, pen, best))   return false;
-	if (!tryAxis(box1, box2, n6, toCentre, 5, pen, best))   return false;
-
-	unsigned bestSingleAxis = best;
-	if (!tryAxis(box1, box2, n7, toCentre, 6, pen, best))   return false;
-	if (!tryAxis(box1, box2, n8, toCentre, 7, pen, best))   return false;
-	if (!tryAxis(box1, box2, n9, toCentre, 8, pen, best))   return false;
-	if (!tryAxis(box1, box2, n10, toCentre, 9, pen, best))  return false;
-	if (!tryAxis(box1, box2, n11, toCentre, 10, pen, best)) return false;
-	if (!tryAxis(box1, box2, n12, toCentre, 11, pen, best)) return false;
-	if (!tryAxis(box1, box2, n13, toCentre, 12, pen, best)) return false;
-	if (!tryAxis(box1, box2, n14, toCentre, 13, pen, best)) return false;
-	if (!tryAxis(box1, box2, n15, toCentre, 14, pen, best)) return false;
-
-	if (best == 160.0f)
-		return false;
-	
-
-	
-	if (best < 3)
-	{
-		
-		fillPointFaceBoxBox(box1, box2, toCentre, data, best, pen);
-		
-		return 1;
-	}
-	else if (best < 6)
-	{
-		// We've got a vertex of box one on a face of box two.
-		// We use the same algorithm as above, but swap around
-		// one and two (and therefore also the vector between their
-		// centres).
-		fillPointFaceBoxBox(box2, box1, toCentre * -1.0f, data, best - 3, pen);
-		return 1;
-	}
-	else
-	{
-		// We've got an edge-edge contact. Find out which axes
-		best -= 6;
-		unsigned oneAxisIndex = best / 3;
-		unsigned twoAxisIndex = best % 3;
-	    glm::vec3 oneAxis = box1.getAxis(oneAxisIndex);
-		glm::vec3 twoAxis = box2.getAxis(twoAxisIndex);
-		glm::vec3 axis = glm::cross(oneAxis , twoAxis);
-		axis = glm::normalize(axis);
-
-		// The axis should point from box one to box two.
-		if (glm::dot(axis , toCentre) > 0) axis = axis * -1.0f;
-
-		// We have the axes, but not the edges: each axis has 4 edges parallel
-		// to it, we need to find which of the 4 for each object. We do
-		// that by finding the point in the centre of the edge. We know
-		// its component in the direction of the box's collision axis is zero
-		// (its a mid-point) and we determine which of the extremes in each
-		// of the other axes is closest.
-		glm::vec3 ptOnOneEdge = box1.halfSize();
-		glm::vec3 ptOnTwoEdge = box2.halfSize();
-		for (unsigned i = 0; i < 3; i++)
-		{
-			if (i == oneAxisIndex) ptOnOneEdge[i] = 0;
-			else if (glm::dot(box1.getAxis(i) , axis) > 0) ptOnOneEdge[i] = -ptOnOneEdge[i];
-
-			if (i == twoAxisIndex) ptOnTwoEdge[i] = 0;
-			else if (glm::dot(box2.getAxis(i) , axis) < 0) ptOnTwoEdge[i] = -ptOnTwoEdge[i];
-		}
-
-		// Move them into world coordinates (they are already oriented
-		// correctly, since they have been derived from the axes).
-		ptOnOneEdge = glm::vec3(box1.body->getModelMatrix() * glm::vec4(ptOnOneEdge,1.0f));
-		ptOnTwoEdge = glm::vec3(box2.body->getModelMatrix() * glm::vec4(ptOnTwoEdge, 1.0f));
-
-		// So we have a point and a direction for the colliding edges.
-		// We need to find out point of closest approach of the two
-		// line-segments.
-		glm::vec3 vertex = contactPoint( 
-			ptOnOneEdge, oneAxis, box1.halfSize()[oneAxisIndex],
-			ptOnTwoEdge, twoAxis, box2.halfSize()[twoAxisIndex],
-			bestSingleAxis > 2
-		);
-
-		// We can fill the contact.
-		Contact* contact = new Contact;
-
-		contact->penetration = pen;
-		contact->contactNormal = axis;
-		contact->contactPoints.push_back(vertex);
-		contact->setBodyData(box1.body, box2.body, 0.0f, 0.4f);
-		return 1;
-	}
-	return 0;
-}
-
-void CollisionDetector::fillPointFaceBoxBox(const AABB& box1, const AABB& box2, const glm::vec3& toCentre, CollisionData* data, unsigned best, float pen)
-{
-
-	glm::vec3 normal = glm::vec3(0.0f);
-	glm::vec3 kek;
-	if (best == 0)
-		normal = box1.getNormX();
-
-	if (best == 1)
-		normal = box1.getNormY();
-
-	if (best == 2)
-        normal = box1.getNormZ();
-
-
-	if (glm::dot(normal, toCentre) > 0)
-	{
-		normal = normal * -1.0f;
-	}
-
-	
-	glm::vec3 vertex = box2.halfSize();
-	if (glm::dot(box2.getNormX() ,normal) < 0) vertex.x = -vertex.x;
-	if (glm::dot(box2.getNormY(), normal) < 0) vertex.y = -vertex.y;
-	if (glm::dot(box2.getNormZ(), normal) < 0) vertex.z = -vertex.z;
-
-	
-	Contact* contact = new Contact;
-	contact->contactNormal = normal;
-	contact->penetration = pen;
-	contact->contactPoints.push_back(glm::vec3(box2.body->getModelMatrix() * glm::vec4(vertex, 1.0f)));
-	contact->setBodyData(box1.body, box2.body, 0.0f, 0.4f);
-	data->contactArray.push_back(std::move(contact));
-}
-
-glm::vec3 CollisionDetector::contactPoint(const glm::vec3& pOne, const glm::vec3& dOne, float oneSize, const glm::vec3& pTwo, const glm::vec3& dTwo, float twoSize, bool useOne)
-{
-	glm::vec3 toSt, cOne, cTwo;
-	float dpStaOne, dpStaTwo, dpOneTwo, smOne, smTwo;
-	float denom, mua, mub;
-
-	smOne = glm::length(dOne);
-	smTwo = glm::length(dTwo);
-	dpOneTwo = glm::dot(dTwo , dOne);
-
-	toSt = pOne - pTwo;
-	dpStaOne = glm::dot(dOne , toSt);
-	dpStaTwo = glm::dot(dTwo , toSt);
-
-	denom = smOne * smTwo - dpOneTwo * dpOneTwo;
-
-
-	if (fabs(denom) < 0.0001f) {
-		return useOne ? pOne : pTwo;
-	}
-
-	mua = (dpOneTwo * dpStaTwo - smTwo * dpStaOne) / denom;
-	mub = (smOne * dpStaTwo - dpOneTwo * dpStaOne) / denom;
-
-	
-	if (mua > oneSize ||
-		mua < -oneSize ||
-		mub > twoSize ||
-		mub < -twoSize)
-	{
-		return useOne ? pOne : pTwo;
-	}
-	else
-	{
-		cOne = pOne + dOne * mua;
-		cTwo = pTwo + dTwo * mub;
-
-		return cOne * 0.5f + cTwo * 0.5f;
-	}
-}
-
-
 bool CollisionDetector::sphereAndSphere(const Sphere& one, const Sphere& two, CollisionData* data)
 {
 	float r = one.getRadius() + two.getRadius();
@@ -286,7 +88,6 @@ float CollisionDetector::penetrationOnAxis(const AABB& box1, const AABB& box2, c
 		VerBox1[i] = glm::vec3(box1.body->getModelMatrix() * glm::vec4(VerBox1[i], 1.0f));
 		VerBox2[i] = glm::vec3(box2.body->getModelMatrix() * glm::vec4(VerBox2[i], 1.0f));
 	}
-
 
 	float resultMin1;
 	float resultMax1;
@@ -363,7 +164,6 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	normals.push_back(box2.getNormY());
 	normals.push_back(box2.getNormZ());
 
-	
 	normals.push_back(glm::cross(normals[0], normals[3]));
 	normals.push_back(glm::cross(normals[0], normals[4]));
 	normals.push_back(glm::cross(normals[0], normals[5]));
@@ -372,13 +172,9 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	normals.push_back(glm::cross(normals[1], normals[4]));	
 	normals.push_back(glm::cross(normals[1], normals[5]));
 
-
 	normals.push_back(glm::cross(normals[2], normals[3]));
 	normals.push_back(glm::cross(normals[2], normals[4]));
 	normals.push_back(glm::cross(normals[2], normals[5]));
-
-
-
 
 	bool isflip;
 	unsigned best = 0;
@@ -392,26 +188,25 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 		if (glm::length(normals[i]) < 0.001f) {
 			continue;
 		}
-		if (!tryAxis(box1, box2, normals[i], toCenter, i, penetration, best))  return false;
+		//if (!tryAxis(box1, box2, normals[i], toCenter, i, penetration, best))  return false;
 
-		//float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
-		//if (depth <= 0.0f)
-		//	return false;
-		//else if (depth < penetration) {
-		//	if (isflip) {
-		//		normals[i] = normals[i] * -1.0f;
-		//	}
-		//	penetration = depth;
-		//	hitNormal = normals[i];
-		//	best = i;
-		//}
-		
+		float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
+		if (depth <= 0.0f)
+			return false;
+		else if (depth < penetration) {
+			if (isflip) {
+				normals[i] = normals[i] * -1.0f;
+			}
+			penetration = depth;
+			hitNormal = normals[i];
+			best = i;
+		}
 	}
-	hitNormal = normals[best];
+	//hitNormal = normals[best];
 	if (hitNormal == glm::vec3(0.0f))
 		return false;
 	
-	std::cout << best << std::endl;
+   	std::cout << best << std::endl;
 	glm::vec3 axis = glm::normalize(hitNormal);
 
 	Contact* contact = new Contact;
@@ -515,7 +310,7 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	{
 		for (int j = contact->contactPoints.size() - 1; j > i; --j)
 		{
-			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.001f)
+			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.01f)
 			{
 				contact->contactPoints.erase(contact->contactPoints.begin() + j);
 				break;
@@ -527,73 +322,6 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	return true;
 }
 
-std::vector<glm::vec3> CollisionDetector::clipEdges(const std::vector<Line>& edges, const std::vector<Plane> & planes, const AABB& box)
-{
-	std::vector<glm::vec3> result;
-
-	glm::vec3 intersection;
-	for (int i = 0; i < planes.size(); ++i) {
-		for (int j = 0; j < edges.size(); ++j) {
-			if (clipPlane(edges[j], planes[i], &intersection,box)) 
-			{
-				if(PointInOBB(intersection, box)) 
-				{
-					result.push_back(intersection);
-				}			
-			}
-		}
-	}
-
-	return result;
-}
-
-bool CollisionDetector::PointInOBB(const glm::vec3& point, const AABB& obb)
-{
-	glm::vec3 dir = point - obb.getPosition();
-
-	glm::vec3 normals[3];
-	normals[0] = obb.getNormX();
-	normals[1] = obb.getNormY();
-	normals[2] = obb.getNormZ();
-	
-	float half[3];
-	half[0] = obb.halfSize().x;
-	half[1] = obb.halfSize().y;
-	half[2] = obb.halfSize().z;
-	for (int i = 0; i < 3; ++i)
-	{
-		float dist = glm::dot(dir, normals[i]);
-		if (dist > half[i])
-			return false;
-		if (dist < -half[i])
-			return false;
-	}
-	return true;
-}
-
-
-bool CollisionDetector::clipPlane(const Line &edge, const Plane &plane, glm::vec3* intersectionPoint, const AABB& box)
-{
-	glm::vec3 ab =  edge.end - edge.start;
-
-	float nA = glm::dot(plane.normal, edge.start);
-	float nAB = glm::dot(plane.normal, ab);
-
-	if (nAB == 0.0f) {
-		return false;
-	}
-
-	float t = (plane.offset - nA) / nAB;
-	if (t >= 0.0f && t <= 1.0f) 
-	{
-		if (intersectionPoint != nullptr) {
-			*intersectionPoint = edge.start + t * ab;
-		}
-		return true;
-	}
-
-	return false;
-}
 
 bool CollisionDetector::sphereAndTruePlane(const Sphere& sph2,const Plain& plane , CollisionData* data)
 {
@@ -714,13 +442,10 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, Collis
 					glm::length(VertexPos - plane.getPosition()) > plane.getHeight())
 					return false;
 			
-		
 				contact->contactPoints.push_back(plane.getDirection() * (offset - vertexDistance) + VertexPos);
-				contact->penetration = offset - vertexDistance;
-				
+				contact->penetration = offset - vertexDistance;			
 			}
-		}
-	
+		}	
 		contact->setBodyData(aabb.body, plane.body, 0.0f, 0.5f);
 		data->contactArray.push_back(std::move(contact));
 	

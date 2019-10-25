@@ -141,33 +141,15 @@ public:
 		}
 		if (p1.size() == 2 && p2.size() == 2)
 		{
- 			Paths subj(1), clip(1);
-			for (int i = 0; i < p1.size(); ++i)
-			{
-				subj[0].push_back(IntPoint(p1[i].x * 100000.0f, p1[i].y * 100000.0f));
-			}
-			for (int i = 0; i < p2.size(); ++i)
-			{
-				clip[0].push_back(IntPoint(p2[i].x * 100000.0f, p2[i].y * 100000.0f));
-			}
-			Clipper c;
-			PolyTree solution;
-			c.AddPaths(subj, ptSubject, false);
-			c.AddPaths(clip, ptSubject, false);
-			c.Execute(ctIntersection, solution, pftNonZero, pftNonZero);
-
-			Paths res;
-			PolyTreeToPaths(solution, res);
-			if (!res.empty())
-			{
-				for (int i = 0; i < res[0].size(); ++i)
-				{
-					result.push_back(glm::vec2(res[0][i].X / 100000.0f, res[0][i].Y / 100000.0f));
-				}
-			}
-		}
-		
-		
+			glm::vec2 a = p1[0];
+			glm::vec2 b = p1[1];
+			glm::vec2 c = p2[0];
+			glm::vec2 d = p2[1];
+			glm::vec2 T;
+			T.x = -((a.x * b.y - b.x * a.y) * (d.x - c.x) - (c.x * d.y - d.x * c.y) * (b.x - a.x)) / ((a.y - b.y) * (d.x - c.x) - (c.y - d.y) * (b.x - a.x));
+			T.y = ((c.y - d.y) * (-T.x) - (c.x * d.y - d.x * c.y)) / (d.x - c.x);
+			result.push_back(std::move(T));		
+		}		
 		return result;
 	}
 };

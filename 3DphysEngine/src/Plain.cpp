@@ -6,6 +6,7 @@ Plain::Plain(float mass)
 {
 	texture = new Texture("E:\\download\\parket2.0.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_BOX,mass);
+	type = RIGIDBODY_TYPE_PLAIN;
 }
 
 void Plain::draw(Shader& shader, float deltaTime)
@@ -84,6 +85,11 @@ void Plain::init(float width, float height)
 void Plain::move(float deltaTime)
 {
 	body->update(deltaTime);
+}
+
+int Plain::getType()
+{
+	return type;
 }
 
 float Plain::getWidth() const

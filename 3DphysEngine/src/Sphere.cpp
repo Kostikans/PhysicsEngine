@@ -8,6 +8,7 @@ Sphere::Sphere()
 {
 	texture = new Texture("E:\\download\\45614125-bcb2ce00-ba68-11e8-903b-f22addb83ca5.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_SPHERE,1.0f);
+	type = RIGIDBODY_TYPE_SPHERE;
 }
 
 void Sphere::draw(Shader& shader, float deltaTime)
@@ -116,6 +117,11 @@ void Sphere::init(float radius)
 void Sphere::move(float deltaTime)
 {
 	body->update(deltaTime);
+}
+
+int Sphere::getType()
+{
+	return type;
 }
 
 float Sphere::getRadius() const

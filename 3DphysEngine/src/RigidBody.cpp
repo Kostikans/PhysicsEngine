@@ -43,6 +43,9 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
 		
 	}
+	else if(type == RIGIDBODY_TYPE_PLAIN)
+		invTensor = glm::mat3x3(0.0f);
+
 	if (mass != 0.0f)
 		invTensor = glm::inverse(invTensor);
 	else
@@ -211,11 +214,6 @@ void RigidBody::setOrientation(const glm::quat& m_orientation)
 void RigidBody::setMass(const float& m_mass)
 {
 	mass = m_mass;
-}
-
-void RigidBody::setInverseMass(const float m_mass)
-{
-	
 }
 
 glm::mat3x3 RigidBody::getInvInersiaTensor() const

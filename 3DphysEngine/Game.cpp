@@ -74,14 +74,10 @@ int main()
 	projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	shader.setMat4("projectionMatrix", projectionMatrix);
 
-
-
-
 	Sphere sphere1;
 	sphere1.init(1.0f);
 	sphere1.translate(glm::vec3(-3.0f, 7.0f, -3.0f));
 	sphere1.body->setMass(1.0f);
-
 
 	Sphere sphere2;
 	sphere2.init(1.0f);
@@ -93,46 +89,26 @@ int main()
 	Plain plane(0.0f);
 	plane.init(40.0f, 40.0f);
 	plane.translate(glm::vec3(0.0f, -7.0f, -3.0f));
-	//plane.rotate(glm::normalize(glm::quat(glm::angleAxis(glm::radians(15.0f),glm::vec3(1.0f,0.0f,0.0f)))));
-   // plane.body->setStat(false);
-
-
 	
-	 AABB aabb(1.0f);
-	 aabb.init(1.0f, 1.0f, 1.0f);
-	 aabb.translate(glm::vec3(12.0f, -6.0f, -7.0f));
+    AABB aabb(5.0f);
+	aabb.init(1.0f, 1.0f, 1.0f);
+	aabb.translate(glm::vec3(12.0f, -6.0f, -7.0f));
+
+	AABB kek(5.0f);
+    kek.init(1.0f, 1.0f, 1.0f);
+	kek.translate(glm::vec3(12.0f, -1.0f, -7.0f));
 	 
+	sphere1.body->AddLinearImpulse(glm::vec3(14.0f, 10.f, 0.0f));
+	sphere2.body->AddLinearImpulse(glm::vec3(-6.0f, 10.f, 0.0f));
 
-	 AABB kek(1.0f);
-     kek.init(1.0f, 1.0f, 1.0f);
-	 kek.translate(glm::vec3(12.0f, -3.0f, -3.0f));
-	 
-
-
-
-	 sphere1.body->AddLinearImpulse(glm::vec3(14.0f, 10.f, 0.0f));
-	 sphere2.body->AddLinearImpulse(glm::vec3(-6.0f, 10.f, 0.0f));
-
-	 
-
-     aabb.body->AddLinearImpulse(glm::vec3(.0f, 4.f, 0.0f));
-	 //aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(0.0, 400.f, 0.0f));
-
-	// aabb.body->addTorque(glm::vec3(300.0f, 300.0f, 000.0f));
-     // kek.body->addTorque(glm::vec3(000.0f, 000.0f, 200.0f));
-	  
-	  //kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -10.0f));
-	  //aabb.body->AddRotationalImpulse(glm::vec3(13.0f, 0.0f, -8.0f), glm::vec3(0.0, 400.f, 0.0f));
-
-
-	  kek.body->addTorque(glm::vec3(20.0f, 80.0f,80.0f));
-	  kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
+	kek.body->addTorque(glm::vec3(.0f, 0.0f,.0f));
+	 // kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
 	
 	 float deltaPhys = 1.0f / 60.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
-
+	 
 	 aabb.body->update(deltaPhys);
 	 kek.body->update(deltaPhys);
 	 plane.body->update(deltaPhys);
@@ -152,12 +128,8 @@ int main()
 		 deltaTime = currentFrame - lastFrame;
 		 lastFrame = currentFrame;
 
-
 		 glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-
 
 		 if (debug == true)
 		 {
@@ -171,8 +143,8 @@ int main()
 
 			 if (CollisionDetector::boxVsBox(aabb, kek, data) == false)
 			 {
-				  kek.move(deltaPhys);
-			      aabb.move(deltaPhys);
+				 // kek.move(deltaPhys);
+			     // aabb.move(deltaPhys);
 			 }
 
 
@@ -202,18 +174,17 @@ int main()
 		 {
 			 if (data->contactArray.empty() == 0)
 			 {
-			//	 for (int i = 0; i < data->contactArray.size(); ++i)
-			//	 {
-			//		 physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
-			//	 }
+				 for (int i = 0; i < data->contactArray.size(); ++i)
+				 {
+					 physics.resolveContacts(data->contactArray[i],  deltaPhys);
+				 }
 				 data->contactArray.clear();
 			 }
 
-
 			 sphere2.move(deltaPhys);
-			 //aabb.move(deltaPhys);
+			 aabb.move(deltaPhys);
 			 sphere1.move(deltaPhys);
-			 //kek.move(deltaPhys);
+			 kek.move(deltaPhys);
 		 }
 
 		 shader.use();

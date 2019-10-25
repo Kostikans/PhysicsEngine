@@ -5,7 +5,8 @@ AABB::AABB(float mass)
 	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\8640003215_50cc68f8cf_b.jpg");
-	body = new RigidBody(RIGIDBODY_TYPE_BOX,mass);
+	body = new RigidBody(RIGIDBODY_TYPE_BOX, mass);
+	type = RIGIDBODY_TYPE_BOX;
 }
 
 void AABB::drawNormal(Shader& shader)
@@ -236,9 +237,12 @@ void AABB::move(float deltaTime)
 
 	m_normX = normx;
 	m_normY = normy;
-	m_normZ = normz;
+	m_normZ = normz;	
+}
 
-	
+int AABB::getType()
+{
+	return type;
 }
 
 glm::vec3 AABB::getMin() const

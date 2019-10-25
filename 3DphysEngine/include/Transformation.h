@@ -12,6 +12,9 @@
 #include "gtc/matrix_transform.hpp"
 #include "RigidBody.h"
 
+#define RIGIDBODY_TYPE_SPHERE 1
+#define RIGIDBODY_TYPE_BOX 2
+#define RIGIDBODY_TYPE_PLAIN 3
 
 struct VertexData
 {
@@ -39,4 +42,6 @@ public:
 	virtual void translate(const glm::vec3 &translate) = 0;
 	virtual void scale(const float& scale) = 0;
     virtual void rotate(const glm::quat& rotate) = 0;
+	virtual void move(float deltaTime) = 0;
+	virtual int getType() = 0;
 };

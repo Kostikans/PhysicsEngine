@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Transformation.h"
-#define RIGIDBODY_TYPE_SPHERE 1
-#define RIGIDBODY_TYPE_BOX 2
+
 
 class RigidBody
 {
@@ -21,7 +20,8 @@ private:
 	float mass;
 	float rest;
 	float friction;
-
+	
+	
 public:
 	int type;
 	bool stat;
@@ -49,7 +49,6 @@ public:
 	void addRotation(const glm::vec3& m_rotation);
 	void setOrientation(const glm::quat& m_orientation);
 	void setMass(const float& m_mass);
-	void setInverseMass(const float m_mass);
 	glm::mat3x3 getInvInersiaTensor() const;
 	glm::mat4x4 getModelMatrix() const;
 

@@ -2,7 +2,7 @@
 
 #include "Transformation.h"
 #include "Texture.h"
-#include "RigidBody.h"
+
 
 const float LINE_WIDTH = 2.0f;
 
@@ -30,7 +30,7 @@ private:
 	glm::vec3 m_translate;
 	glm::quat m_rotate;
 
-
+	int type;
 
 public:
 	RigidBody* body;
@@ -40,6 +40,8 @@ public:
 	void translate(const glm::vec3& translate) override;
 	void scale(const float& scale) override;
 	void rotate(const glm::quat& rotate) override;
+	void move(float deltaTime) override;
+	int getType() override;
 	void init(float width, float height ,float depth);
 
 	void setMass(const float & m_mass);
@@ -60,5 +62,4 @@ public:
 	glm::vec3 getPosition() const;
 
 	glm::vec3 halfSize() const;
-	void move(float deltaTime);
 };

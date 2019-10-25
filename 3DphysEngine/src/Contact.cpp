@@ -1,7 +1,7 @@
 #include "..\include\Contact.h"
 #include <iostream>
 
-float Contact::LinearProjectionPercent = 0.5f;
+float Contact::LinearProjectionPercent = 0.35f;
 float Contact::PenetrationSlack = 0.01f;
 void Contact::setBodyData(RigidBody* one, RigidBody* two, float friction, float restitution)
 {
@@ -125,6 +125,8 @@ void Contact::apllyImpulses(int c)
 
 float Contact::kekCompute(int c, float proj)
 {
+	if (proj > 0.0f)
+		return 0.0f;
 	glm::vec3 normal = glm::normalize(contactNormal);
 
 	glm::vec3 n1 = normal;
@@ -132,14 +134,6 @@ float Contact::kekCompute(int c, float proj)
 	glm::vec3 n2 = -normal;
 	glm::vec3 w2 = -(glm::cross(contactPoints[c] - body[1]->getPosition(), normal));
 
-	/*float initialVelocityProjection =
-		  glm::dot(n1 , body[0]->getVelocity())
-		+ glm::dot(w1 , body[0]->getRotation())
-		+ glm::dot(n2 , body[1]->getVelocity())
-		+ glm::dot(w2 , body[1]->getRotation());*/
-	if (proj > 0.0f)
-		return 0.0f;
-	
 
 	float a = glm::dot(n1 , body[0]->getVelocity())
 		+ glm::dot(n2 , body[1]->getVelocity())
@@ -159,7 +153,7 @@ float Contact::kekCompute(int c, float proj)
 		+ glm::dot(n2 , (body[1]->getVelocity() + n2 * body[1]->getInverseMass() * lambda))
 		+ glm::dot(w2 , (body[1]->getRotation() + w2 * body[1]->getInvInersiaTensor() * lambda));
 
-	//std::cout << velocityProjection << std::endl;
+
 	lambda /= contactPoints.size();
  	return lambda;
 }
@@ -183,14 +177,11 @@ void Contact::resolvePosition()
 		float scalar = depth;
 		glm::vec3 correction = contactNormal * scalar * LinearProjectionPercent;
 		
-		//if (!body[0]->getInverseMass() == 0.0f)
-		//{
-			body[0]->setPosition(body[0]->getPosition() + correction);
-		//}
-
+		body[0]->setPosition(body[0]->getPosition() + correction);
+	
 		if (!body[1]->getInverseMass() == 0.0f)
 		{
-			body[1]->setPosition(body[1]->getPosition() - correction); //* body[1]->getInverseMass());
+			body[1]->setPosition(body[1]->getPosition() - correction);
 		}
 	}
 }
