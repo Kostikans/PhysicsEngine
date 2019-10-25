@@ -16,6 +16,7 @@ private:
 	glm::vec3 rotation;
 
 	glm::mat3x3 invTensor;
+
 	glm::mat4x4 modelMatrix;
 	float mass;
 	float rest;

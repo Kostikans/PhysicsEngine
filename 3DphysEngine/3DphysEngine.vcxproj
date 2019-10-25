@@ -132,6 +132,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\clipper.cpp" />
     <ClCompile Include="src\CollisionDetector.cpp" />
     <ClCompile Include="src\Contact.cpp" />
     <ClCompile Include="src\EngineRoutine.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="include\AABB.h" />
     <ClInclude Include="include\AttribLayout.h" />
     <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\clipper.h" />
     <ClInclude Include="include\CollisionData.h" />
     <ClInclude Include="include\CollisionDetector.h" />
     <ClInclude Include="include\Contact.h" />

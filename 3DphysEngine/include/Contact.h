@@ -24,9 +24,14 @@ public:
 
 
 	float computeLambda(int c);
-	void aplly(const float lambda, int c);
+	void aplly(float lambda, int c);
 
 	void apllyImpulses(int c);
 
+
+
+	float kekCompute(int c, float proj);
+
+	void kekApply(float lambda, int c);
 	void resolvePosition();
 };

@@ -4,6 +4,7 @@
 RigidBody::RigidBody(int m_type,float m_mass)
 	:rest(0.5f),friction(0.0f),type(m_type),stat(true)
 {
+
 	modelMatrix = glm::mat4x4(1.0f);
 	acceleration = glm::vec3(0.0f);
 	mass = m_mass;
@@ -57,7 +58,7 @@ void RigidBody::update(float deltaTime)
 {
 	//glm::vec3 delta = position - oldPosition;
 	//oldPosition = position;
-	const float damping = 0.97f;
+	const float damping = 0.98f;
 
 	lastFrameAcceleration = forceAccum * getInverseMass();
 	velocity = velocity + lastFrameAcceleration * deltaTime;
@@ -86,10 +87,7 @@ void RigidBody::update(float deltaTime)
 	if (fabsf(rotation.z) < 0.01f) {
 		rotation.z = 0.0f;
 	}
-	//velocity *= powf(damping, deltaTime);
-	//rotation *= powf(damping , deltaTime);
-
-
+	
 
 
 
@@ -101,11 +99,10 @@ void RigidBody::update(float deltaTime)
 	kek *= orientation;
 	kek *= 0.5f;
 	orientation += kek;
-
 	
-
+	
 	position += velocity * deltaTime ;
-
+	
 	calculateData();
 	clearForces();
 }
@@ -246,6 +243,7 @@ void RigidBody::calculateData()
 {
 	modelMatrix = glm::mat4x4(1.0f);
 	orientation = glm::normalize(orientation);
+
 
 	modelMatrix = glm::translate(modelMatrix, position);
 	modelMatrix *= glm::toMat4(orientation);

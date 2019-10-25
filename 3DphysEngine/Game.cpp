@@ -98,31 +98,37 @@ int main()
 
 
 	
-	 AABB aabb(5.0f);
+	 AABB aabb(1.0f);
 	 aabb.init(1.0f, 1.0f, 1.0f);
-	 aabb.translate(glm::vec3(12.0f, 4.1f, -3.0f));
+	 aabb.translate(glm::vec3(12.0f, -6.0f, -7.0f));
 	 
 
-	 AABB kek(5.0f);
+	 AABB kek(1.0f);
      kek.init(1.0f, 1.0f, 1.0f);
-	 kek.translate(glm::vec3(12.0f, 8.2f, -3.0f));
+	 kek.translate(glm::vec3(12.0f, -3.0f, -3.0f));
 	 
 
 
 
-	 sphere1.body->AddLinearImpulse(glm::vec3(18.0f, 10.f, 0.0f));
-	 sphere2.body->AddLinearImpulse(glm::vec3(-8.0f, 10.f, 0.0f));
+	 sphere1.body->AddLinearImpulse(glm::vec3(14.0f, 10.f, 0.0f));
+	 sphere2.body->AddLinearImpulse(glm::vec3(-6.0f, 10.f, 0.0f));
 
 	 
 
-     //aabb.body->AddLinearImpulse(glm::vec3(20.0f, 10.f, 0.0f));
+     aabb.body->AddLinearImpulse(glm::vec3(.0f, 4.f, 0.0f));
 	 //aabb.body->AddRotationalImpulse(glm::vec3(0.5f, 7.f, 0.0f), glm::vec3(0.0, 400.f, 0.0f));
 
 	// aabb.body->addTorque(glm::vec3(300.0f, 300.0f, 000.0f));
-       kek.body->addTorque(glm::vec3(200.0f, 000.0f, 00.0f));
-	// kek.body->AddLinearImpulse(glm::vec3(-20.0f, 10.f, 0.0f));
+     // kek.body->addTorque(glm::vec3(000.0f, 000.0f, 200.0f));
+	  
+	  //kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -10.0f));
+	  //aabb.body->AddRotationalImpulse(glm::vec3(13.0f, 0.0f, -8.0f), glm::vec3(0.0, 400.f, 0.0f));
+
+
+	  kek.body->addTorque(glm::vec3(20.0f, 80.0f,80.0f));
+	  kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
 	
-	 float deltaPhys = 1.0f / 55.0f;
+	 float deltaPhys = 1.0f / 60.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
@@ -165,8 +171,8 @@ int main()
 
 			 if (CollisionDetector::boxVsBox(aabb, kek, data) == false)
 			 {
-				 //kek.move(deltaPhys);
-				 //aabb.move(deltaPhys);
+				  kek.move(deltaPhys);
+			      aabb.move(deltaPhys);
 			 }
 
 
@@ -196,21 +202,18 @@ int main()
 		 {
 			 if (data->contactArray.empty() == 0)
 			 {
-				 for (int i = 0; i < data->contactArray.size(); ++i)
-				 {
-					 physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
-				 }
+			//	 for (int i = 0; i < data->contactArray.size(); ++i)
+			//	 {
+			//		 physics.resolveContacts(data->contactArray[i], 1, deltaPhys);
+			//	 }
 				 data->contactArray.clear();
 			 }
 
 
 			 sphere2.move(deltaPhys);
-			 aabb.move(deltaPhys);
-			 sphere1.move(deltaPhys);
-			 kek.move(deltaPhys);
-			 //sphere2.move(deltaPhys);
 			 //aabb.move(deltaPhys);
-			 //plane.move(deltaPhys);
+			 sphere1.move(deltaPhys);
+			 //kek.move(deltaPhys);
 		 }
 
 		 shader.use();
@@ -224,7 +227,7 @@ int main()
 		 plane.draw(shader, deltaTime);
 
 		 glfwSwapBuffers(window);
-		 glfwPollEvents();
+   		 glfwPollEvents();
 	 }	
 	glfwTerminate();
 	return 0;

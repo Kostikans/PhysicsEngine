@@ -6,15 +6,7 @@
 #include "Plain.h"
 #include "Contact.h"
 
-struct Line {
-public:
-	glm::vec3 start;
-	glm::vec3 end;
-	Line(const glm::vec3& m_start, const glm::vec3& m_end)
-		:start(m_start), end(m_end)
-	{
-	}
-};
+
 struct Plane
 {
 public:

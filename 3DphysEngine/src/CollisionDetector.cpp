@@ -28,7 +28,7 @@ bool CollisionDetector::tryAxis(const AABB& box1, const AABB& box2,  glm::vec3& 
 
 	float penetration = penetrationOnAxis(box1, box2, axis, toCentre);
 
-	if (penetration < 0) return false;
+	if (penetration < 0.0f) return false;
 	if (penetration < smallestPenetration) {
 		smallestPenetration = penetration;
 		smallestCase = index;
@@ -377,126 +377,152 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	normals.push_back(glm::cross(normals[2], normals[4]));
 	normals.push_back(glm::cross(normals[2], normals[5]));
 
+
+
+
 	bool isflip;
 	unsigned best = 0;
 	float penetration = 100000.0f;
 	glm::vec3 hitNormal;
 	for (int i = 0; i < normals.size(); ++i)
 	{
-		if (normals[i].x < 0.0001f) normals[i].x = 0.0f;
-		if (normals[i].y < 0.0001f) normals[i].y = 0.0f;
-		if (normals[i].z < 0.0001f) normals[i].z = 0.0f;
+		if (normals[i].x < 0.00001f) normals[i].x = 0.0f;
+		if (normals[i].y < 0.00001f) normals[i].y = 0.0f;
+		if (normals[i].z < 0.00001f) normals[i].z = 0.0f;
 		if (glm::length(normals[i]) < 0.001f) {
 			continue;
 		}
+		if (!tryAxis(box1, box2, normals[i], toCenter, i, penetration, best))  return false;
 
-		float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
-		if (depth <= 0.0f)
-			return false;
-		else if (depth < penetration) {
-			if (isflip) {
-				normals[i] = normals[i] * -1.0f;
-			}
-			penetration = depth;
-			hitNormal = normals[i];
-			best = i;
-		}
+		//float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
+		//if (depth <= 0.0f)
+		//	return false;
+		//else if (depth < penetration) {
+		//	if (isflip) {
+		//		normals[i] = normals[i] * -1.0f;
+		//	}
+		//	penetration = depth;
+		//	hitNormal = normals[i];
+		//	best = i;
+		//}
+		
 	}
+	hitNormal = normals[best];
 	if (hitNormal == glm::vec3(0.0f))
 		return false;
 	
 	std::cout << best << std::endl;
 	glm::vec3 axis = glm::normalize(hitNormal);
-	std::vector<Line> edges1;
-	std::vector<Line> edges2;
-
-	/*int index[][2] = {
-		{1,6},{3,6},{4,6},{7,2},{2,5},{2,0},
-		{1,0},{0,3},{7,1},{7,4},{4,5},{3,5}
-	};*/
-	int index[][2] = { 
-		{ 6, 1 },{ 6, 3 },{ 6, 4 },{ 2, 7 },{ 2, 5 },{ 2, 0 },
-		{ 0, 1 },{ 0, 3 },{ 7, 1 },{ 7, 4 },{ 4, 5 },{ 5, 3 }
-	};
-
-	for (int j = 0; j < 12; ++j) 
-	{
-		edges1.push_back(Line(VerBox1[index[j][0]] , VerBox1[index[j][1]]));
-		edges2.push_back(Line(VerBox2[index[j][0]] , VerBox2[index[j][1]]));
-	}
-
-	std::vector<glm::vec3> norm;
-	norm.push_back(box1.getNormX());
-	norm.push_back(box1.getNormY());
-	norm.push_back(box1.getNormZ());
-	norm.push_back(box2.getNormX());
-	norm.push_back(box2.getNormY());
-	norm.push_back(box2.getNormZ());
-
-	std::vector<Plane> plane1;
-
-	plane1.push_back(Plane(norm[0]           , glm::dot(norm[0], box1.getPosition() + norm[0] * box1.halfSize().x)));
-	plane1.push_back(Plane(norm[0]  * -1.0f  , -glm::dot(norm[0], box1.getPosition() - norm[0] * box1.halfSize().x)));
-	plane1.push_back(Plane(norm[1]           , glm::dot(norm[1], box1.getPosition() + norm[1] * box1.halfSize().y)));
-	plane1.push_back(Plane(norm[1]  * -1.0f  , -glm::dot(norm[1], box1.getPosition() - norm[1] * box1.halfSize().y)));
-	plane1.push_back(Plane(norm[2]           , glm::dot(norm[2], box1.getPosition() + norm[2] * box1.halfSize().z)));
-	plane1.push_back(Plane(norm[2]  * -1.0f  , -glm::dot(norm[2], box1.getPosition() - norm[2] * box1.halfSize().z)));
-							      																				
-
-	std::vector<Plane> plane2;
-
-	plane2.push_back(Plane(norm[3]           , glm::dot(norm[3], box2.getPosition() + norm[3] * box2.halfSize().x)));
-	plane2.push_back(Plane(norm[3]  * -1.0f  ,- glm::dot(norm[3], box2.getPosition() - norm[3] * box2.halfSize().x)));
-	plane2.push_back(Plane(norm[4]           , glm::dot(norm[4], box2.getPosition() + norm[4] * box2.halfSize().y)));
-	plane2.push_back(Plane(norm[4]  * -1.0f  , -glm::dot(norm[4], box2.getPosition() - norm[4] * box2.halfSize().y)));
-	plane2.push_back(Plane(norm[5]           , glm::dot(norm[5], box2.getPosition() + norm[5] * box2.halfSize().z)));
-	plane2.push_back(Plane(norm[5]  * -1.0f  , -glm::dot(norm[5], box2.getPosition() - norm[5] * box2.halfSize().z)));
-
-	std::vector<glm::vec3> points2 = clipEdges(edges2, plane1, box1);
-	std::vector<glm::vec3> points1 = clipEdges(edges1, plane2, box2); 
-
-
-	float resultMin1;
-	float resultMax1;
-	resultMin1 = resultMax1 = glm::dot(axis, VerBox1[0]);
-	for (int i = 1; i < 8; ++i) {
-		float projection = glm::dot(axis, VerBox1[i]);
-		resultMin1 = (projection < resultMin1) ? projection : resultMin1;
-		resultMax1 = (projection > resultMax1) ? projection : resultMax1;
-	}
-	float distance = (resultMax1 - resultMin1) * 0.5f - penetration * 0.5f;
-	glm::vec3 pointOnPlane = box1.getPosition() + axis * distance;
 
 	Contact* contact = new Contact;
 	contact->contactNormal = axis;
-	contact->penetration = penetration ;
+	contact->penetration = penetration;
 
-	for (int i = 0; i < points1.size(); ++i)
+	std::vector<glm::vec3> maxVertexes1;
+	float max1 = glm::length(box1.halfSize() * axis);
+
+	glm::vec3 maxPoint;
+	for (int i = 0; i < 8; ++i)
 	{
-	    contact->contactPoints.push_back(points1[i]);
+		float temp = glm::dot(axis, VerBox1[i] - box1.getPosition());
+		if (temp >= max1)
+		{
+			max1 = temp;
+			maxPoint = VerBox1[i];
+		}
 	}
-	for (int i = 0; i < points2.size(); ++i)
+	for (int i = 0; i < 8; ++i)
 	{
-		contact->contactPoints.push_back(points2[i]);
+		float temp = glm::dot(axis, VerBox1[i] - box1.getPosition());
+		if (fabs(temp - max1) <= 0.1f || temp == max1)
+			maxVertexes1.push_back(VerBox1[i]);
 	}
 
+	std::vector<glm::vec3> maxVertexes2;
 
+	float max2 = glm::length(box2.halfSize() * -axis);
+	for (int i = 0; i < 8; ++i)
+	{
+ 		float temp = glm::dot(-axis, VerBox2[i] - box2.getPosition());
+		if (temp >= max2)
+			max2 = temp;
+	}
+	for (int i = 0; i < 8; ++i)
+	{
+		float temp = glm::dot(-axis, VerBox2[i] - box2.getPosition());
+		if (fabs(temp - max2) <= 0.1f || temp == max2)
+			maxVertexes2.push_back(VerBox2[i]);
+	}
+
+   	glm::vec3 mostPerpendicular;
+	
+	float xProjection = fabs(glm::dot(axis , glm::vec3(1.0f, 0.0f, 0.0f))); 
+	float yProjection = fabs(glm::dot(axis , glm::vec3(0.0f, 1.0f, 0.0f))); 
+	float zProjection = fabs(glm::dot(axis , glm::vec3(0.0f, 0.0f, 1.0f))); 
+	if ((xProjection > yProjection) && (xProjection > zProjection)) mostPerpendicular = glm::vec3(1.0f, 0.0f, 0.0f);
+	else
+		if ((yProjection > xProjection) && (yProjection > zProjection)) mostPerpendicular = glm::vec3(0.0f, 1.0f, 0.0f);
+		else
+			mostPerpendicular = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	glm::vec3 clipAxisX = glm::normalize(glm::cross(axis, mostPerpendicular));
+	if (axis == glm::vec3(glm::vec3(1.0f, 0.0f, 0.0f)))
+		clipAxisX = glm::vec3(0.0f, 1.0f, 0.0f);
+	if (axis == glm::vec3(glm::vec3(0.0f, 1.0f, 0.0f)))
+		clipAxisX = glm::vec3(1.0f, 0.0f, 0.0f);
+	if (axis == glm::vec3(glm::vec3(0.0f, 0.0f, 1.0f)))
+		clipAxisX = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	glm::vec3 clipAxisY = glm::normalize(glm::cross(clipAxisX, axis));
+
+	std::vector<glm::vec2> clippedPoints1;
+	std::vector<glm::vec2> clippedPoints2;
+	for (int i = 0; i < maxVertexes1.size(); ++i)
+	{
+		float  point1 = glm::dot(maxVertexes1[i], clipAxisX);
+		float  point2 = glm::dot(maxVertexes1[i], clipAxisY);
+		clippedPoints1.push_back(glm::vec2(point1, point2));
+	}
+	
+ 	for (int i = 0; i < maxVertexes2.size(); ++i)
+	{
+		float  point1 = glm::dot(maxVertexes2[i], clipAxisX);
+		float  point2 = glm::dot(maxVertexes2[i], clipAxisY);
+		clippedPoints2.push_back(glm::vec2(point1, point2));
+	}
+
+   	std::vector<glm::vec2> contacts = Geometry3D::intersectionOfPolyhedrons(clippedPoints1,clippedPoints2);
+
+	std::vector<glm::vec3> resultContact;
+	glm::mat4x4 toVec3Mat = glm::mat4x4(1.0f);
+	toVec3Mat[0] =  glm::vec4(clipAxisX, 1.0f);
+	toVec3Mat[1] =  glm::vec4(clipAxisY, 1.0f);
+	toVec3Mat[2] =  glm::vec4(axis, 1.0f);
+
+
+	for (int i = 0; i < contacts.size(); ++i)
+	{
+  		glm::vec3 current = glm::vec3(contacts[i] , glm::dot(maxPoint, axis));
+		current = glm::vec3(toVec3Mat * glm::vec4(current, 1.0f));
+  		resultContact.push_back(current);
+	}
+	
+	for (int i = 0; i < resultContact.size(); ++i)
+	{
+		contact->contactPoints.push_back(resultContact[i]);
+	}
 	for (int i = contact->contactPoints.size() - 1; i >= 0; --i)
 	{
-		glm::vec3 point = contact->contactPoints[i];
-		contact->contactPoints[i] = point; //+  (axis * glm::dot(axis, pointOnPlane - point));
-		
 		for (int j = contact->contactPoints.size() - 1; j > i; --j)
 		{
-			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.01f) 
+			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.001f)
 			{
 				contact->contactPoints.erase(contact->contactPoints.begin() + j);
 				break;
 			}
 		}
 	}
-
-   	contact->setBodyData(box2.body, box1.body, 0.0f, 0.5f);
+   	contact->setBodyData(box2.body, box1.body, 0.0f,0.5f);
 	data->contactArray.push_back(std::move(contact));
 	return true;
 }
@@ -508,7 +534,7 @@ std::vector<glm::vec3> CollisionDetector::clipEdges(const std::vector<Line>& edg
 	glm::vec3 intersection;
 	for (int i = 0; i < planes.size(); ++i) {
 		for (int j = 0; j < edges.size(); ++j) {
-			if (!clipPlane(edges[j], planes[i], &intersection,box)) 
+			if (clipPlane(edges[j], planes[i], &intersection,box)) 
 			{
 				if(PointInOBB(intersection, box)) 
 				{
@@ -548,7 +574,7 @@ bool CollisionDetector::PointInOBB(const glm::vec3& point, const AABB& obb)
 
 bool CollisionDetector::clipPlane(const Line &edge, const Plane &plane, glm::vec3* intersectionPoint, const AABB& box)
 {
-	glm::vec3 ab = edge.end - edge.start;
+	glm::vec3 ab =  edge.end - edge.start;
 
 	float nA = glm::dot(plane.normal, edge.start);
 	float nAB = glm::dot(plane.normal, ab);
@@ -675,7 +701,7 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, Collis
 
 	if (fabsf(dist) <= pLen)
 	{
-
+	
 		Contact* contact = new Contact;
 		contact->contactNormal = plane.getDirection();
 		for (int i = 0; i < 8; ++i)
@@ -687,17 +713,17 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, Collis
 				if (glm::length(VertexPos - plane.getPosition()) > plane.getWidth() ||
 					glm::length(VertexPos - plane.getPosition()) > plane.getHeight())
 					return false;
-				
-	
+			
+		
 				contact->contactPoints.push_back(plane.getDirection() * (offset - vertexDistance) + VertexPos);
 				contact->penetration = offset - vertexDistance;
 				
 			}
 		}
-		contact->contactNormal = plane.getDirection();
-
+	
 		contact->setBodyData(aabb.body, plane.body, 0.0f, 0.5f);
 		data->contactArray.push_back(std::move(contact));
+	
 	}
 
 	return collide;
