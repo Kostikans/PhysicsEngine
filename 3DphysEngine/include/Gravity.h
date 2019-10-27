@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Transformation.h"
-#include "RigidBody.h"
+
 
 const glm::vec3 GRAVITY = glm::vec3(0.0f, -9.81f, 0.0f);
 

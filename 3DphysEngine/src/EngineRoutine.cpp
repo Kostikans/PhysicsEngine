@@ -25,6 +25,7 @@ void EngineRoutine::resolveContacts(Contact* contacts, float duration)
 			return;
 		}
 	}*/
+
 	std::vector<float> projects;
 	for (int i = 0; i < contacts->contactPoints.size(); ++i)
 	{
@@ -42,63 +43,97 @@ void EngineRoutine::resolveContacts(Contact* contacts, float duration)
 			+ glm::dot(w2, contacts->body[1]->getRotation());
 		projects.push_back(initialVelocityProjection);
 	}
-	if (contacts->body[1]->getInverseMass() != 0.0f)
-	{
-		int kek = 0;
-	}
+
  	 accumulatedImpulse = 0.0f;
-	 for (int j = 0; j < 15; ++j)
-	 {
-		 
+	 for (int j = 0; j < 30; ++j)
+	 {		 
 			for (int i = 0; i < contacts->contactPoints.size(); ++i)
-			{
-				
-				/* accumulatedImpulse += lambda;
-			     if (accumulatedImpulse < 0.0f)
-			     {
-			        lambda += (0.0f - accumulatedImpulse);
-			        accumulatedImpulse = 0.0f;
-			     }	*/
+			{				
 				float lambda = contacts->kekCompute(i, projects[i]);
+				/*accumulatedImpulse += lambda;
+				if (accumulatedImpulse < 0.0f)
+				{
+					lambda += (0.0f - accumulatedImpulse);
+					accumulatedImpulse = 0.0f;
+				}*/
 				if (lambda < 0.0f)
 					continue;
-				contacts->kekApply(lambda, i);
-				 
+				contacts->kekApply(lambda, i);			 
+				/*float lambda = contacts->computeLambda(i);
+				if(lambda < 0.0f)
+					continue;
+				contacts->aplly(lambda,i);*/
 			}	 
 	 }	
-    contacts->resolvePosition();
 }
 
-void EngineRoutine::run(float deltaTime)
+void EngineRoutine::run(float deltaTime,Shader& shader,Shader &debug)
 {
-	for (int i = 0; i < objects.size(); ++i)
+ 	for (int i = 0; i < objects.size(); ++i)
 	{
-		gravity.updateGravity(objects[i], deltaTime);
+		objects[i]->updateGravity(deltaTime);
 	}
-	for (int i = 0; i < objects.size(); ++i)
+	for (int i = 0; i < objects.size() - 1; ++i)
 	{
-		RigidBody* current = objects[i];
-		for (int j = 0; j < objects.size(); ++j)
+	    Transformation* current = objects[i];
+		int FirstType = current->getType();
+		for (int j = i + 1; j < objects.size(); ++j)
 		{
-			if (j == i)
-				continue;
-
-		}
-	}
-	for (int i = 0; data->contactArray.size(); ++i)
-	{
-		if (data->contactArray.empty() == 0)
-		{
-			for (int i = 0; i < data->contactArray.size(); ++i)
+		
+			int SecondType = objects[j]->getType();
+		
+			if (FirstType == RIGIDBODY_TYPE_BOX)
 			{
-				this->resolveContacts(data->contactArray[i],  deltaTime);
+ 				if (SecondType == RIGIDBODY_TYPE_BOX)
+					CollisionDetector::boxVsBox(*dynamic_cast<AABB*>(current), *dynamic_cast<AABB*>(objects[j]), data);
+				if (SecondType == RIGIDBODY_TYPE_SPHERE)
+					CollisionDetector::boxAndSphere(*dynamic_cast<AABB*>(current), *dynamic_cast<Sphere*>(objects[j]), data);
+				if (SecondType == RIGIDBODY_TYPE_PLANE)
+					CollisionDetector::boxAndPlain(*dynamic_cast<AABB*>(current), *dynamic_cast<Plain*>(objects[j]), data);
 			}
-			data->contactArray.clear();
+			if (FirstType == RIGIDBODY_TYPE_SPHERE)
+			{
+				if (SecondType == RIGIDBODY_TYPE_SPHERE)
+					CollisionDetector::sphereAndSphere(*dynamic_cast<Sphere*>(current), *dynamic_cast<Sphere*>(objects[j]), data);
+				if (SecondType == RIGIDBODY_TYPE_BOX)
+					CollisionDetector::boxAndSphere(*dynamic_cast<AABB*>(objects[j]), *dynamic_cast<Sphere*>(current), data);
+				if (SecondType == RIGIDBODY_TYPE_PLANE)
+					CollisionDetector::sphereAndTruePlain(*dynamic_cast<Sphere*>(current), *dynamic_cast<Plain*>(objects[j]), data);
+			}
+			if (FirstType == RIGIDBODY_TYPE_PLANE)
+			{
+				if (SecondType == RIGIDBODY_TYPE_BOX)
+					CollisionDetector::boxAndPlain(*dynamic_cast<AABB*>(objects[j]), *dynamic_cast<Plain*>(current), data);
+				if (SecondType == RIGIDBODY_TYPE_SPHERE)
+					CollisionDetector::sphereAndTruePlain(*dynamic_cast<Sphere*>(objects[j]), *dynamic_cast<Plain*>(current), data);
+				if (SecondType == RIGIDBODY_TYPE_PLANE)
+					continue;
+			}
 		}
 	}
+	data->contactPointView(debug);
+	
+	if (data->contactArray.empty() == 0)
+	{
+		for (int i = 0; i < data->contactArray.size(); ++i)
+		{
+			resolveContacts(data->contactArray[i],  deltaTime);
+		}
+	}
+	
+
+	if (data->contactArray.empty() == 0)
+	{
+		for (int i = 0; i < data->contactArray.size(); ++i)
+		{
+			data->contactArray[i]->resolvePosition();
+		}
+	}
+	
+	data->contactArray.clear();
 	for (int i = 0; i < objects.size(); ++i)
 	{
-		objects[i]->update(deltaTime);
+		objects[i]->move(deltaTime);
 	}
 }
 

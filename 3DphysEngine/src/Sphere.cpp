@@ -2,12 +2,13 @@
 #include <math.h>
 #include "..\include\Sphere.h"
 
+Gravity* gravity = new Gravity;
 
-Sphere::Sphere()
+Sphere::Sphere(float mass)
 	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\45614125-bcb2ce00-ba68-11e8-903b-f22addb83ca5.jpg");
-	body = new RigidBody(RIGIDBODY_TYPE_SPHERE,1.0f);
+	body = new RigidBody(RIGIDBODY_TYPE_SPHERE,mass);
 	type = RIGIDBODY_TYPE_SPHERE;
 }
 
@@ -48,7 +49,7 @@ void Sphere::rotate(const glm::quat& rotate)
 	m_rotate *= rotate;
 }
 
-void Sphere::init(float radius)
+void Sphere::init(float radius, float crutch, float depth )
 {
 	m_radius = radius;
 	std::vector<VertexData> vertexes;
@@ -114,6 +115,20 @@ void Sphere::init(float radius)
 	
 }
 
+void Sphere::drawNormal(Shader& shader)
+{
+}
+
+void Sphere::addImpulse(const glm::vec3& impulse)
+{
+	body->AddLinearImpulse(impulse);
+}
+
+void Sphere::addTorque(const glm::vec3& impulse)
+{
+	body->addTorque(impulse);
+}
+
 void Sphere::move(float deltaTime)
 {
 	body->update(deltaTime);
@@ -122,6 +137,11 @@ void Sphere::move(float deltaTime)
 int Sphere::getType()
 {
 	return type;
+}
+
+void Sphere::updateGravity(float deltaTime)
+{
+	gravity.updateGravity(body, deltaTime);
 }
 
 float Sphere::getRadius() const

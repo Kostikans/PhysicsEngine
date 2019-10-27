@@ -14,7 +14,7 @@
 
 #define RIGIDBODY_TYPE_SPHERE 1
 #define RIGIDBODY_TYPE_BOX 2
-#define RIGIDBODY_TYPE_PLAIN 3
+#define RIGIDBODY_TYPE_PLANE 3
 
 struct VertexData
 {
@@ -43,5 +43,10 @@ public:
 	virtual void scale(const float& scale) = 0;
     virtual void rotate(const glm::quat& rotate) = 0;
 	virtual void move(float deltaTime) = 0;
+	virtual void updateGravity(float deltaTime) = 0;
+	virtual void init(float widht, float height, float depth) = 0;
 	virtual int getType() = 0;
+	virtual void drawNormal(Shader& shader) = 0;
+	virtual void addImpulse(const glm::vec3& impulse) = 0;
+	virtual void addTorque(const glm::vec3& impulse) = 0;
 };

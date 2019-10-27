@@ -43,7 +43,7 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
 		
 	}
-	else if(type == RIGIDBODY_TYPE_PLAIN)
+	else if(type == RIGIDBODY_TYPE_PLANE)
 		invTensor = glm::mat3x3(0.0f);
 
 	if (mass != 0.0f)
@@ -59,8 +59,7 @@ void RigidBody::setStat(bool m_stat)
 
 void RigidBody::update(float deltaTime)
 {
-	//glm::vec3 delta = position - oldPosition;
-	//oldPosition = position;
+	
 	const float damping = 0.98f;
 
 	lastFrameAcceleration = forceAccum * getInverseMass();

@@ -19,7 +19,7 @@ class EngineRoutine
 public:
 	EngineRoutine();
 	void resolveContacts(Contact* contacts, float duration);
-	void run(float deltaTime);
+	void run(float deltaTime, Shader & shader, Shader & debug);
 	void addEntity(Transformation* obj);
 	void setData(CollisionData* data);
 };

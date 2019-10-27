@@ -6,10 +6,8 @@
 #include <chrono>
 #include <thread>
 
-#include "include/Sphere.h"
+#include "include/Transformation.h"
 #include "include/Camera.h"
-#include "include/Plain.h"
-#include "include/AABB.h"
 #include "include/CollisionDetector.h"
 #include "include/Gravity.h"
 #include "include/CollisionData.h"
@@ -74,44 +72,58 @@ int main()
 	projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	shader.setMat4("projectionMatrix", projectionMatrix);
 
-	Sphere sphere1;
-	sphere1.init(1.0f);
-	sphere1.translate(glm::vec3(-3.0f, 7.0f, -3.0f));
-	sphere1.body->setMass(1.0f);
-
-	Sphere sphere2;
-	sphere2.init(1.0f);
-	sphere2.translate(glm::vec3(3.0f, 7.0f, -3.0f));
-	sphere2.body->setMass(1.0f);
 
 	Gravity gravity;
 
-	Plain plane(0.0f);
-	plane.init(40.0f, 40.0f);
-	plane.translate(glm::vec3(0.0f, -7.0f, -3.0f));
-	
-    AABB aabb(5.0f);
-	aabb.init(1.0f, 1.0f, 1.0f);
-	aabb.translate(glm::vec3(12.0f, -6.0f, -7.0f));
-
-	AABB kek(5.0f);
-    kek.init(1.0f, 1.0f, 1.0f);
-	kek.translate(glm::vec3(12.0f, -1.0f, -7.0f));
-	 
-	sphere1.body->AddLinearImpulse(glm::vec3(14.0f, 10.f, 0.0f));
-	sphere2.body->AddLinearImpulse(glm::vec3(-6.0f, 10.f, 0.0f));
-
-	kek.body->addTorque(glm::vec3(.0f, 0.0f,.0f));
-	 // kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
-	
+	std::vector<Transformation*> obj;
+	Transformation *plane = new Plain(0.0f);
+	plane->init(40.0f, 40.0f,0.0f);
+	plane->translate(glm::vec3(0.0f, -7.0f, -3.0f));
+	obj.push_back(plane);
+	/*for (int i = 0; i < 20; ++i)
+	{	
+			Transformation* aabb = new AABB(5.0f);
+			aabb->init(1.0f, 1.0f, 1.0f);
+			aabb->translate(glm::vec3((i + 4.0f) * 1.1f, (-6.0f + i * 3.0f), (i - 10.0f) * 1.1f));
+			obj.push_back(aabb);
+	}*/
+	for (int i = 0; i < 10; ++i)
+	{
+			Transformation* aabb = new AABB(5.0f);
+			aabb->init(1.0f, 1.0f, 1.0f);
+			aabb->translate(glm::vec3(3.5f,(-6.0f + i * 4.0f), 0.0f));
+			obj.push_back(aabb);
+	}
+	//int pyro = 3;
+	//float offset = 0.0f;
+	//for (int i = 0; i < 3; ++i)
+	//{
+	//	for (int j = pyro; j > 0; --j)
+	//	{
+	//		Transformation* aabb = new AABB(5.0f);
+	//		aabb->init(1.0f, 1.0f, 1.0f);
+	//		aabb->translate(glm::vec3((j + 4.0f + offset) * 2.0f, (-6.0f + i * 2.0f), 5.0f));
+	//		obj.push_back(aabb);
+	//		
+	//	}
+	//	offset += 0.5f;
+	//	--pyro;
+	//}
+	 //kek->body->addTorque(glm::vec3(.0f, 0.0f,.0f));
+     //kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
+    // obj[2]->addTorque(glm::vec3(400.f, 000.0f,400.0f));
 	 float deltaPhys = 1.0f / 60.0f;
 
 	 CollisionData* data = new CollisionData;
 	 EngineRoutine physics;
 	 
-	 aabb.body->update(deltaPhys);
-	 kek.body->update(deltaPhys);
-	 plane.body->update(deltaPhys);
+	 for (int i = 0; i < obj.size(); ++i)
+	 {
+		 obj[i]->move(deltaPhys);
+		 physics.addEntity(obj[i]);
+	 }
+
+
 	 glfwSwapInterval(1);
 
 	 while (!glfwWindowShouldClose(window))
@@ -131,72 +143,31 @@ int main()
 		 glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		 ContactPoint.use();
+		 ContactPoint.setMat4("projectionMatrix", projectionMatrix);
+		 camera.setViewMatrix(ContactPoint);
+		
 		 if (debug == true)
 		 {
-			// CollisionDetector::sphereAndSphere(sphere1, sphere2, data);
-
-			 CollisionDetector::sphereAndTruePlane(sphere1, plane, data);
-			 CollisionDetector::sphereAndTruePlane(sphere2, plane, data);
-
-			 CollisionDetector::boxAndPlain(aabb, plane, data);
-			 CollisionDetector::boxAndPlain(kek, plane, data);
-
-			 if (CollisionDetector::boxVsBox(aabb, kek, data) == false)
-			 {
-				 // kek.move(deltaPhys);
-			     // aabb.move(deltaPhys);
-			 }
-
-
-			 CollisionDetector::boxAndSphere(aabb, sphere1, data);
-			 CollisionDetector::boxAndSphere(kek, sphere1, data);
-			 CollisionDetector::boxAndSphere(kek, sphere2, data);
-			 CollisionDetector::boxAndSphere(aabb, sphere2, data);
-
-			 gravity.updateGravity(sphere1.body, deltaTime);
-			 gravity.updateGravity(sphere2.body, deltaTime);
-			 gravity.updateGravity(aabb.body, deltaTime);
-			 gravity.updateGravity(kek.body, deltaTime);
+			 physics.run(deltaPhys,debugShader,ContactPoint);
 		 }
 
 		 debugShader.use();
 		 debugShader.setMat4("projectionMatrix", projectionMatrix);
 		 camera.setViewMatrix(debugShader);
-		 kek.drawNormal(debugShader);
-		 aabb.drawNormal(debugShader);
-
-		 ContactPoint.use();
-		 ContactPoint.setMat4("projectionMatrix", projectionMatrix);
-		 camera.setViewMatrix(ContactPoint);
-
-		 data->contactPointView(ContactPoint);
-		 if (debug == true)
+		 for (int i = 0; i < obj.size(); ++i)
 		 {
-			 if (data->contactArray.empty() == 0)
-			 {
-				 for (int i = 0; i < data->contactArray.size(); ++i)
-				 {
-					 physics.resolveContacts(data->contactArray[i],  deltaPhys);
-				 }
-				 data->contactArray.clear();
-			 }
-
-			 sphere2.move(deltaPhys);
-			 aabb.move(deltaPhys);
-			 sphere1.move(deltaPhys);
-			 kek.move(deltaPhys);
+			 obj[i]->drawNormal(debugShader);
 		 }
 
 		 shader.use();
 		 shader.setMat4("projectionMatrix", projectionMatrix);
 		 camera.setViewMatrix(shader);
 
-		 sphere1.draw(shader, deltaTime);
-		 sphere2.draw(shader, deltaTime);
-		 kek.draw(shader, deltaTime);
-		 aabb.draw(shader, deltaTime);
-		 plane.draw(shader, deltaTime);
-
+		 for (int i = 0; i < obj.size(); ++i)
+		 {
+			 obj[i]->draw(shader,deltaTime);
+		 }
 		 glfwSwapBuffers(window);
    		 glfwPollEvents();
 	 }	

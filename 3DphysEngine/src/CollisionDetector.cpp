@@ -4,13 +4,16 @@
 #include <cmath>
 #include <algorithm>
 
+std::vector<glm::vec3> CollisionDetector::separationAxes;
+glm::mat4x4 CollisionDetector::model(1.0f);
+
 float CollisionDetector::penetrationOnAxis(const AABB& box1, const AABB& box2, const glm::vec3& axis, const glm::vec3& toCentre)
 {
 	float oneProject = transformToAxis(box1, axis);
 	float twoProject = transformToAxis(box2, axis);
 
 	float distance = fabs(glm::dot(toCentre , axis));
-	return oneProject + twoProject - distance;
+	return (oneProject + twoProject - distance);
 }
 
 float CollisionDetector::transformToAxis(const AABB& box, const glm::vec3& axis)
@@ -36,6 +39,36 @@ bool CollisionDetector::tryAxis(const AABB& box1, const AABB& box2,  glm::vec3& 
 	return true;
 }
 
+void CollisionDetector::getSepAxis(std::vector<glm::vec3> sep, const glm::vec3& pos)
+{
+	for (int i = 0; i < sep.size(); ++i)
+	{
+		sep[i] *= 2.0f;
+	}
+	separationAxes = sep;
+	model = glm::translate(model,pos);
+}
+
+void CollisionDetector::drawSepAxis(Shader& shader)
+{	
+	shader.use();
+	VertexBuffer vbo;
+	vbo.allocate(separationAxes.data(), separationAxes.size() * sizeof(glm::vec3));
+
+	VertexAttribBuffer vao;
+	AttribLayout layout1;
+	layout1.push<float>(3);
+	vao.pushLayout(layout1, vbo);
+	shader.setMat4("modelMatrix",model);
+	glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0);
+	shader.setVec3("AxisColor", color);
+	
+	glLineWidth(4.0f);		
+	vbo.bind();
+	glDrawArrays(GL_LINES, 0, separationAxes.size());
+	vbo.unbind();	
+}
+
 bool CollisionDetector::sphereAndSphere(const Sphere& one, const Sphere& two, CollisionData* data)
 {
 	float r = one.getRadius() + two.getRadius();
@@ -58,37 +91,10 @@ bool CollisionDetector::sphereAndSphere(const Sphere& one, const Sphere& two, Co
 	return true;
 }
 
-float CollisionDetector::penetrationOnAxis(const AABB& box1, const AABB& box2, const glm::vec3& axis, bool *isFlip)
+float CollisionDetector::penetrationOnAxis(glm::vec3 * VerBox1,glm::vec3 * VerBox2,const AABB& box1, const AABB& box2, glm::vec3& axis, bool *isFlip)
 {
-	glm::vec3 VerBox1[8] =
-	{
-		glm::vec3(box1.halfSize().x  , box1.halfSize().y  , box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  , box1.halfSize().y  ,  box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  ,  -box1.halfSize().y  , box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  ,  box1.halfSize().y  ,  -box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(box1.halfSize().x  , -box1.halfSize().y  ,  -box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  ,  box1.halfSize().y  , -box1.halfSize().z),
-		glm::vec3(-box1.halfSize().x  , -box1.halfSize().y  ,  box1.halfSize().z)
-	};
-	glm::vec3 VerBox2[8] =
-	{
-		glm::vec3(box2.halfSize().x  , box2.halfSize().y  , box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  , box2.halfSize().y  ,  box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  ,  -box2.halfSize().y  , box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  ,  box2.halfSize().y  ,  -box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  , -box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(box2.halfSize().x  , -box2.halfSize().y  ,  -box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  ,  box2.halfSize().y  , -box2.halfSize().z),
-		glm::vec3(-box2.halfSize().x  ,  -box2.halfSize().y  ,  box2.halfSize().z)
-	};
+	axis = glm::normalize(axis);
 	
-	for (int i = 0; i < 8; ++i)
-	{
-		VerBox1[i] = glm::vec3(box1.body->getModelMatrix() * glm::vec4(VerBox1[i], 1.0f));
-		VerBox2[i] = glm::vec3(box2.body->getModelMatrix() * glm::vec4(VerBox2[i], 1.0f));
-	}
-
 	float resultMin1;
 	float resultMax1;
 	float resultMin2;
@@ -127,6 +133,10 @@ float CollisionDetector::penetrationOnAxis(const AABB& box1, const AABB& box2, c
 
 bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionData* data)
 {
+	if (!Geometry3D::broadPhase(Spher(sqrtf(box1.halfSize().x * box1.halfSize().x + box1.halfSize().y * box1.halfSize().y + box1.halfSize().z * box1.halfSize().z), box1.getPosition())
+		, Spher(sqrtf(box2.halfSize().x * box2.halfSize().x + box2.halfSize().y * box2.halfSize().y + box2.halfSize().z * box2.halfSize().z), box2.getPosition())))
+		return false;
+
 	glm::vec3 VerBox1[8] =
 	{
 		glm::vec3(box1.halfSize().x  , box1.halfSize().y  , box1.halfSize().z),
@@ -176,76 +186,69 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	normals.push_back(glm::cross(normals[2], normals[4]));
 	normals.push_back(glm::cross(normals[2], normals[5]));
 
+
+	
 	bool isflip;
-	unsigned best = 0;
-	float penetration = 100000.0f;
+   	unsigned best = 0;
+	float penetration = FLT_MAX;
 	glm::vec3 hitNormal;
 	for (int i = 0; i < normals.size(); ++i)
 	{
-		if (normals[i].x < 0.00001f) normals[i].x = 0.0f;
-		if (normals[i].y < 0.00001f) normals[i].y = 0.0f;
-		if (normals[i].z < 0.00001f) normals[i].z = 0.0f;
 		if (glm::length(normals[i]) < 0.001f) {
 			continue;
 		}
-		//if (!tryAxis(box1, box2, normals[i], toCenter, i, penetration, best))  return false;
 
-		float depth = penetrationOnAxis(box1, box2, normals[i], &isflip);
+		float depth = penetrationOnAxis(VerBox1,VerBox2,box1, box2, normals[i], &isflip);
+	
 		if (depth <= 0.0f)
 			return false;
 		else if (depth < penetration) {
 			if (isflip) {
 				normals[i] = normals[i] * -1.0f;
 			}
+		
 			penetration = depth;
 			hitNormal = normals[i];
 			best = i;
 		}
 	}
-	//hitNormal = normals[best];
-	if (hitNormal == glm::vec3(0.0f))
+	if (normals[best] == glm::vec3(0.0f))
 		return false;
 	
-   	std::cout << best << std::endl;
-	glm::vec3 axis = glm::normalize(hitNormal);
+	
+   	glm::vec3 axis = hitNormal;
 
 	Contact* contact = new Contact;
 	contact->contactNormal = axis;
 	contact->penetration = penetration;
 
 	std::vector<glm::vec3> maxVertexes1;
+	std::vector<glm::vec3> maxVertexes2;
+
 	float max1 = glm::length(box1.halfSize() * axis);
+	float max2 = glm::length(box2.halfSize() * -axis);
 
 	glm::vec3 maxPoint;
 	for (int i = 0; i < 8; ++i)
 	{
-		float temp = glm::dot(axis, VerBox1[i] - box1.getPosition());
-		if (temp >= max1)
+		float temp1 = glm::dot(axis, VerBox1[i] - box1.getPosition());
+		if (temp1 >= max1)
 		{
-			max1 = temp;
+			max1 = temp1;
 			maxPoint = VerBox1[i];
 		}
+		float temp2 = glm::dot(-axis, VerBox2[i] - box2.getPosition());
+		if (temp2 >= max2)
+			max2 = temp2;
 	}
 	for (int i = 0; i < 8; ++i)
 	{
-		float temp = glm::dot(axis, VerBox1[i] - box1.getPosition());
-		if (fabs(temp - max1) <= 0.1f || temp == max1)
+		float temp1 = glm::dot(axis, VerBox1[i] - box1.getPosition());
+		if (fabs(temp1 - max1) <= 0.1f || temp1 == max1)
 			maxVertexes1.push_back(VerBox1[i]);
-	}
 
-	std::vector<glm::vec3> maxVertexes2;
-
-	float max2 = glm::length(box2.halfSize() * -axis);
-	for (int i = 0; i < 8; ++i)
-	{
- 		float temp = glm::dot(-axis, VerBox2[i] - box2.getPosition());
-		if (temp >= max2)
-			max2 = temp;
-	}
-	for (int i = 0; i < 8; ++i)
-	{
-		float temp = glm::dot(-axis, VerBox2[i] - box2.getPosition());
-		if (fabs(temp - max2) <= 0.1f || temp == max2)
+		float temp2 = glm::dot(-axis, VerBox2[i] - box2.getPosition());
+		if (fabs(temp2 - max2) <= 0.1f || temp2 == max2)
 			maxVertexes2.push_back(VerBox2[i]);
 	}
 
@@ -268,8 +271,14 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	if (axis == glm::vec3(glm::vec3(0.0f, 0.0f, 1.0f)))
 		clipAxisX = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	glm::vec3 clipAxisY = glm::normalize(glm::cross(clipAxisX, axis));
+	if (axis == glm::vec3(glm::vec3(-1.0f, 0.0f, 0.0f)))
+		clipAxisX = glm::vec3(0.0f, 1.0f, 0.0f);
+	if (axis == glm::vec3(glm::vec3(0.0f, -1.0f, 0.0f)))
+		clipAxisX = glm::vec3(1.0f, 0.0f, 0.0f);
+	if (axis == glm::vec3(glm::vec3(0.0f, 0.0f, -1.0f)))
+		clipAxisX = glm::vec3(0.0f, 1.0f, 0.0f);
 
+	glm::vec3 clipAxisY = glm::normalize(glm::cross(clipAxisX, axis));
 	std::vector<glm::vec2> clippedPoints1;
 	std::vector<glm::vec2> clippedPoints2;
 	for (int i = 0; i < maxVertexes1.size(); ++i)
@@ -290,55 +299,51 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 
 	std::vector<glm::vec3> resultContact;
 	glm::mat4x4 toVec3Mat = glm::mat4x4(1.0f);
-	toVec3Mat[0] =  glm::vec4(clipAxisX, 1.0f);
-	toVec3Mat[1] =  glm::vec4(clipAxisY, 1.0f);
-	toVec3Mat[2] =  glm::vec4(axis, 1.0f);
-
+	toVec3Mat[0] = glm::vec4(clipAxisX, 1.0f);
+	toVec3Mat[1] = glm::vec4(clipAxisY, 1.0f);
+	toVec3Mat[2] = glm::vec4(axis, 1.0f);
 
 	for (int i = 0; i < contacts.size(); ++i)
 	{
   		glm::vec3 current = glm::vec3(contacts[i] , glm::dot(maxPoint, axis));
 		current = glm::vec3(toVec3Mat * glm::vec4(current, 1.0f));
-  		resultContact.push_back(current);
+		contact->contactPoints.push_back(current);
 	}
-	
-	for (int i = 0; i < resultContact.size(); ++i)
-	{
-		contact->contactPoints.push_back(resultContact[i]);
-	}
+
 	for (int i = contact->contactPoints.size() - 1; i >= 0; --i)
 	{
 		for (int j = contact->contactPoints.size() - 1; j > i; --j)
 		{
-			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.01f)
+			if (glm::length(contact->contactPoints[i] - contact->contactPoints[j]) < 0.001f)
 			{
 				contact->contactPoints.erase(contact->contactPoints.begin() + j);
 				break;
 			}
 		}
 	}
-   	contact->setBodyData(box2.body, box1.body, 0.0f,0.5f);
+
+   	contact->setBodyData(box2.body, box1.body, 0.0f,0.6f);
 	data->contactArray.push_back(std::move(contact));
 	return true;
 }
 
 
-bool CollisionDetector::sphereAndTruePlane(const Sphere& sph2,const Plain& plane , CollisionData* data)
+bool CollisionDetector::sphereAndTruePlain(const Sphere& sph2, const Plain& Plain , CollisionData* data)
 {
 
 	glm::vec3 position = sph2.getPosition(); 
-    float centerDistance = glm::dot(plane.getDirection() , position) -  glm::dot(plane.getPosition() , plane.getDirection());
+    float centerDistance = glm::dot(Plain.getDirection() , position) -  glm::dot(Plain.getPosition() , Plain.getDirection());
 	if (centerDistance * centerDistance  > sph2.getRadius() * sph2.getRadius())
 	{
 		return false;
 	}
-	float t = glm::dot(plane.getDirection(), position) - glm::dot(plane.getPosition(), plane.getDirection());
-	glm::vec3 point = position - t *  plane.getDirection();
+	float t = glm::dot(Plain.getDirection(), position) - glm::dot(Plain.getPosition(), Plain.getDirection());
+	glm::vec3 point = position - t *  Plain.getDirection();
 
-	if (glm::length(point - plane.getPosition()) > plane.getWidth() ||
-		glm::length(point - plane.getPosition()) > plane.getHeight())
+	if (glm::length(point - Plain.getPosition()) > Plain.getWidth() ||
+		glm::length(point - Plain.getPosition()) > Plain.getHeight())
 		return false;
-	glm::vec3 normal = plane.getDirection();
+	glm::vec3 normal = Plain.getDirection();
 	float penetration = -centerDistance;
 	if (centerDistance < 0)
 	{
@@ -348,10 +353,10 @@ bool CollisionDetector::sphereAndTruePlane(const Sphere& sph2,const Plain& plane
 	penetration += sph2.getRadius();
 
 	Contact* contact = new Contact;
-	contact->contactNormal = plane.getDirection();
+	contact->contactNormal = Plain.getDirection();
 	contact->penetration = penetration;
-	contact->contactPoints.push_back(position - plane.getDirection() * centerDistance);
-	contact->setBodyData(sph2.body, plane.body, 0.0f, 1.0f);
+	contact->contactPoints.push_back(position - Plain.getDirection() * centerDistance);
+	contact->setBodyData(sph2.body, Plain.body, 0.0f, 1.0f);
 	data->contactArray.push_back(std::move(contact));
 
 	return true;
@@ -400,7 +405,7 @@ bool CollisionDetector::boxAndSphere(const AABB& aabb, const Sphere& sphere, Col
 	return true; 
 }
 
-bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, CollisionData* data)
+bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plain, CollisionData* data)
 {
 	glm::vec3 Vertexes[8] =
 	{
@@ -417,36 +422,35 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plane, Collis
 	{
 		Vertexes[i] = glm::vec3(aabb.body->getModelMatrix() * glm::vec4(Vertexes[i], 1.0f));
 	}
-	
-	float offset = glm::dot(plane.getDirection(), plane.getPosition());
+	float offset = glm::dot(plain.getDirection(), plain.getPosition());
 
 	bool collide = false;
-	float pLen = aabb.halfSize().x * fabsf(glm::dot(plane.getDirection(), aabb.getNormX())) +
-		aabb.halfSize().y * fabsf(glm::dot(plane.getDirection(), aabb.getNormY())) +
-		aabb.halfSize().z * fabsf(glm::dot(plane.getDirection(), aabb.getNormZ()));
+	float pLen = aabb.halfSize().x * fabsf(glm::dot(plain.getDirection(), aabb.getNormX())) +
+		aabb.halfSize().y * fabsf(glm::dot(plain.getDirection(), aabb.getNormY())) +
+		aabb.halfSize().z * fabsf(glm::dot(plain.getDirection(), aabb.getNormZ()));
 
-	float dist = glm::dot(plane.getDirection(), aabb.getPosition()) - offset;
+	float dist = glm::dot(plain.getDirection(), aabb.getPosition()) - offset;
 
-	if (fabsf(dist) <= pLen)
+	if (fabsf(dist) < pLen)
 	{
-	
 		Contact* contact = new Contact;
-		contact->contactNormal = plane.getDirection();
+		contact->contactNormal = plain.getDirection();
 		for (int i = 0; i < 8; ++i)
 		{
 			glm::vec3 VertexPos = Vertexes[i];
-			float vertexDistance = glm::dot(VertexPos, plane.getDirection());
+			float vertexDistance = glm::dot(VertexPos, plain.getDirection());
 			if (vertexDistance < offset)
 			{
-				if (glm::length(VertexPos - plane.getPosition()) > plane.getWidth() ||
-					glm::length(VertexPos - plane.getPosition()) > plane.getHeight())
+				if (glm::length(VertexPos - plain.getPosition()) > plain.getWidth() ||
+					glm::length(VertexPos - plain.getPosition()) > plain.getHeight())
 					return false;
 			
-				contact->contactPoints.push_back(plane.getDirection() * (offset - vertexDistance) + VertexPos);
-				contact->penetration = offset - vertexDistance;			
+				contact->contactPoints.push_back(plain.getDirection() * (offset - vertexDistance) + VertexPos);
+				contact->penetration = offset - vertexDistance;	
+			
 			}
 		}	
-		contact->setBodyData(aabb.body, plane.body, 0.0f, 0.5f);
+		contact->setBodyData(aabb.body, plain.body, 0.0f, 0.8f);
 		data->contactArray.push_back(std::move(contact));
 	
 	}

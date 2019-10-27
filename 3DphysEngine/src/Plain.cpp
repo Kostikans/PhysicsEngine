@@ -6,7 +6,7 @@ Plain::Plain(float mass)
 {
 	texture = new Texture("E:\\download\\parket2.0.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_BOX,mass);
-	type = RIGIDBODY_TYPE_PLAIN;
+	type = RIGIDBODY_TYPE_PLANE;
 }
 
 void Plain::draw(Shader& shader, float deltaTime)
@@ -56,7 +56,7 @@ void Plain::rotate(const glm::quat& rotate)
 	direction = glm::normalize(glm::vec3(glm::toMat4(m_rotate) * glm::vec4(direction,1.0f)));
 }
 
-void Plain::init(float width, float height)
+void Plain::init(float width, float height, float crutch)
 {
 	min = glm::vec3(-width, 0.0f, height);
 	max = glm::vec3(width, 0.0f, -height);
@@ -82,9 +82,25 @@ void Plain::init(float width, float height)
 	ibo.allocate(indices.data(), indices.size() * sizeof(GLuint));	
 }
 
+void Plain::drawNormal(Shader& shader)
+{
+}
+
+void Plain::addImpulse(const glm::vec3& impulse)
+{
+}
+
+void Plain::addTorque(const glm::vec3& impulse)
+{
+}
+
 void Plain::move(float deltaTime)
 {
 	body->update(deltaTime);
+}
+
+void Plain::updateGravity(float deltaTime)
+{
 }
 
 int Plain::getType()

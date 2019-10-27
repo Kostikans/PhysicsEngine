@@ -33,8 +33,13 @@ public:
 	void scale(const float& scale) override;
 	void rotate(const glm::quat& rotate) override;
 	void move(float deltaTime) override;
+	void updateGravity(float deltaTime) override;
 	int getType() override;
-	void init(float widht,float height);
+	void init(float widht,float height , float crutch = 0) override;
+	void drawNormal(Shader& shader) override;
+	void addImpulse(const glm::vec3& impulse) override;
+	void addTorque(const glm::vec3& impulse)  override;
+
 	float getWidth() const;
 	float getHeight() const;
 	glm::vec3 getDirection() const;

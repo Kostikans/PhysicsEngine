@@ -1,12 +1,19 @@
 #include <iostream>
 #include "..\include\AABB.h"
 
+
 AABB::AABB(float mass)
 	: m_scale(1.0f)
 {
 	texture = new Texture("E:\\download\\8640003215_50cc68f8cf_b.jpg");
 	body = new RigidBody(RIGIDBODY_TYPE_BOX, mass);
 	type = RIGIDBODY_TYPE_BOX;
+}
+
+AABB::AABB()
+	: m_scale(1.0f)
+{
+
 }
 
 void AABB::drawNormal(Shader& shader)
@@ -140,6 +147,16 @@ void AABB::init(float width, float height, float depth)
 	normalVbo.allocate(normals.data(), normals.size() * sizeof(glm::vec3));
 }
 
+void AABB::addImpulse(const glm::vec3& impulse)
+{
+	body->AddLinearImpulse(impulse);
+}
+
+void AABB::addTorque(const glm::vec3& impulse)
+{
+	body->addTorque(impulse);
+}
+
 void AABB::setMass(const float & m_mass)
 {
 	body->setMass(m_mass);
@@ -221,7 +238,7 @@ void AABB::move(float deltaTime)
 
 	body->update(deltaTime);
 	m_translate = body->getPosition();
-	glm::vec3 normx = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(1.0f,0.0f,0.0f, 1.0f));
+	glm::vec3 normx = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	glm::vec3 normy = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 	glm::vec3 normz = glm::vec3((glm::toMat4(body->getOrientation())) * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 
@@ -237,12 +254,18 @@ void AABB::move(float deltaTime)
 
 	m_normX = normx;
 	m_normY = normy;
-	m_normZ = normz;	
+	m_normZ = normz;
+
 }
 
 int AABB::getType()
 {
 	return type;
+}
+
+void AABB::updateGravity(float deltaTime)
+{
+	gravity.updateGravity(body, deltaTime);
 }
 
 glm::vec3 AABB::getMin() const
