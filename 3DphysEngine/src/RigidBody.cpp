@@ -4,7 +4,8 @@
 RigidBody::RigidBody(int m_type,float m_mass)
 	:rest(0.5f),friction(0.0f),type(m_type),stat(true)
 {
-
+	pseudoVelocity = glm::vec3(0.0f);
+	pseudoRotation = glm::vec3(0.0f);
 	modelMatrix = glm::mat4x4(1.0f);
 	acceleration = glm::vec3(0.0f);
 	mass = m_mass;
@@ -58,21 +59,20 @@ void RigidBody::setStat(bool m_stat)
 }
 
 void RigidBody::update(float deltaTime)
-{
-	
-	const float damping = 0.98f;
+{	
+	const float damping = 0.97f;
 
 	lastFrameAcceleration = forceAccum * getInverseMass();
 	velocity = velocity + lastFrameAcceleration * deltaTime;
 	velocity = velocity * damping;
 
-	if (fabsf(velocity.x) < 0.01f) {
+	if (fabsf(velocity.x) < 0.001f) {
 		velocity.x = 0.0f;
 	}
-	if (fabsf(velocity.y) < 0.01f) {
+	if (fabsf(velocity.y) < 0.001f) {
 		velocity.y = 0.0f;
 	}
-	if (fabsf(velocity.z) < 0.01f) {
+	if (fabsf(velocity.z) < 0.001f) {
 		velocity.z = 0.0f;
 	}
 
@@ -80,19 +80,16 @@ void RigidBody::update(float deltaTime)
 	rotation += angAccel * deltaTime;
 	rotation *= damping;
 
-	if (fabsf(rotation.x) < 0.01f) {
+	if (fabsf(rotation.x) < 0.001f) {
 		rotation.x = 0.0f;
 	}
-	if (fabsf(rotation.y) < 0.01f) {
+	if (fabsf(rotation.y) < 0.001f) {
 		rotation.y = 0.0f;
 	}
-	if (fabsf(rotation.z) < 0.01f) {
+	if (fabsf(rotation.z) < 0.001f) {
 		rotation.z = 0.0f;
 	}
 	
-
-
-
 	glm::quat kek;
 	kek.w = 0.0f;
 	kek.x = rotation.x * deltaTime;
@@ -100,11 +97,11 @@ void RigidBody::update(float deltaTime)
 	kek.z = rotation.z * deltaTime;
 	kek *= orientation;
 	kek *= 0.5f;
-	orientation += kek;
-	
-	
+	orientation += kek;	
+
 	position += velocity * deltaTime ;
-	
+	position += pseudoVelocity * deltaTime;
+
 	calculateData();
 	clearForces();
 }
@@ -180,6 +177,16 @@ void RigidBody::setVelocity(const glm::vec3& m_velocity)
 	velocity = m_velocity;
 }
 
+void RigidBody::setPseudoVelocity(const glm::vec3& m_velocity)
+{
+	pseudoVelocity += m_velocity;
+}
+
+void RigidBody::setPseudoRotation(const glm::vec3& m_rotate)
+{
+	pseudoRotation += m_rotate;
+}
+
 void RigidBody::addTorque(const glm::vec3& m_torque)
 {
 	torqueAccum += m_torque;
@@ -234,6 +241,8 @@ void RigidBody::clearForces()
 {
 	forceAccum = glm::vec3(0.0f);
 	torqueAccum = glm::vec3(0.0f);
+	pseudoVelocity = glm::vec3(0.0f);
+	pseudoRotation = glm::vec3(0.0f);
 }
 
 void RigidBody::calculateData() 

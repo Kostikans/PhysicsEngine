@@ -87,31 +87,46 @@ int main()
 			aabb->translate(glm::vec3((i + 4.0f) * 1.1f, (-6.0f + i * 3.0f), (i - 10.0f) * 1.1f));
 			obj.push_back(aabb);
 	}*/
-	for (int i = 0; i < 10; ++i)
+	/*for (int i = 0; i < 2; ++i)
 	{
 			Transformation* aabb = new AABB(5.0f);
 			aabb->init(1.0f, 1.0f, 1.0f);
-			aabb->translate(glm::vec3(3.5f,(-6.0f + i * 4.0f), 0.0f));
+			aabb->translate(glm::vec3(0.97f * i , (-3.0f + i * 8.0f), 0.0f));
 			obj.push_back(aabb);
+	}*/
+	//Transformation* sph = new Sphere(5.0f);
+	//sph->init(1.0f, 0.0f, 0.0f);
+	//sph->translate(glm::vec3(12.0f, -3.0f, -6.0f));
+	//sph->addImpulse(glm::vec3(2.0f, 3.0f, 35.f));
+	//obj.push_back(sph);
+	/*for (int i = 0; i < 5; ++i)
+	{
+		for (int j = 0; j < 5; ++j)
+		{
+			Transformation* aabb = new AABB(5.0f);
+			aabb->init(1.0f, 1.0f, 1.0f);
+			aabb->translate(glm::vec3(i * 2.0f, (-6.0f + j * 4.0f), 0.0f));
+			obj.push_back(aabb);
+		}
+	}*/
+	int pyro = 4;
+	float offset = 0.0f;
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = pyro; j > 0; --j)
+		{
+			Transformation* aabb = new AABB(5.0f);
+			aabb->init(1.0f, 1.0f, 1.0f);
+			aabb->translate(glm::vec3((j + 4.0f + offset) * 2.0f, (-6.0f + i * 2.0f), 5.0f));
+			obj.push_back(aabb);
+			
+		}
+		offset += 0.5f;
+		--pyro;
 	}
-	//int pyro = 3;
-	//float offset = 0.0f;
-	//for (int i = 0; i < 3; ++i)
-	//{
-	//	for (int j = pyro; j > 0; --j)
-	//	{
-	//		Transformation* aabb = new AABB(5.0f);
-	//		aabb->init(1.0f, 1.0f, 1.0f);
-	//		aabb->translate(glm::vec3((j + 4.0f + offset) * 2.0f, (-6.0f + i * 2.0f), 5.0f));
-	//		obj.push_back(aabb);
-	//		
-	//	}
-	//	offset += 0.5f;
-	//	--pyro;
-	//}
 	 //kek->body->addTorque(glm::vec3(.0f, 0.0f,.0f));
      //kek.body->AddLinearImpulse(glm::vec3(0.0f, 0.f, -6.0f));
-    // obj[2]->addTorque(glm::vec3(400.f, 000.0f,400.0f));
+     obj[2]->addTorque(glm::vec3(000.f, 000.0f, 000.0f));
 	 float deltaPhys = 1.0f / 60.0f;
 
 	 CollisionData* data = new CollisionData;

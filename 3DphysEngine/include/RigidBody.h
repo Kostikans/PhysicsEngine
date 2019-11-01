@@ -7,16 +7,17 @@ class RigidBody
 {
 private:
 	glm::vec3 position, oldPosition;
-	glm::vec3 velocity , forceAccum , torqueAccum;
+	glm::vec3 pseudoVelocity , velocity , forceAccum , torqueAccum;
 	glm::vec3 lastFrameAcceleration;
 	glm::vec3 acceleration;
 	glm::quat orientation;
 	glm::vec3 angVel;
 	glm::vec3 rotation;
+	glm::vec3 pseudoRotation;
 
 	glm::mat3x3 invTensor;
-
 	glm::mat4x4 modelMatrix;
+
 	float mass;
 	float rest;
 	float friction;
@@ -41,6 +42,8 @@ public:
 	float getRest() const;
 	float getMass() const;
 	void setVelocity(const glm::vec3& m_velocity);
+	void setPseudoVelocity(const glm::vec3& m_velocity);
+	void setPseudoRotation(const glm::vec3& m_rotate);
 	void addTorque(const glm::vec3& m_torque);
 	void addForce(const glm::vec3& m_force);
 

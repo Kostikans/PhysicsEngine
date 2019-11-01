@@ -11,14 +11,15 @@ class EngineRoutine
 {
 
 	float accumulatedImpulse;
-	float lambda;
 	std::vector<Transformation*> objects;
 	CollisionData* data;
 	Gravity gravity;
+	std::vector<std::vector<float>> proj;
 	
 public:
 	EngineRoutine();
-	void resolveContacts(Contact* contacts, float duration);
+	void calculateProjects(Contact* contacts , int c);
+	void resolveContacts(Contact* contacts, int c);
 	void run(float deltaTime, Shader & shader, Shader & debug);
 	void addEntity(Transformation* obj);
 	void setData(CollisionData* data);

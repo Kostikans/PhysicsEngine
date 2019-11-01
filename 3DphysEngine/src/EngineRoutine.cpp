@@ -5,30 +5,15 @@
 EngineRoutine::EngineRoutine()
 {
 	accumulatedImpulse = 0.0f;
-	data = new CollisionData;
-	lambda =0.0f;
+	data = new CollisionData;		
 }
 
-void EngineRoutine::resolveContacts(Contact* contacts, float duration)
+void EngineRoutine::calculateProjects(Contact* contacts, int c)
 {
-	/*for (int i = 0; i < contacts->contactPoints.size(); ++i)
-	{
-		glm::vec3 r1 = contacts->contactPoints[i] - contacts->body[0]->getPosition();
-		glm::vec3 r2 = contacts->contactPoints[i] - contacts->body[1]->getPosition();
-
-		glm::vec3 relativeVel = (contacts->body[0]->getVelocity() + glm::cross(contacts->body[0]->getRotation(), r1)) - 
-			(contacts->body[1]->getVelocity() + glm::cross(contacts->body[1]->getRotation(), r2));
-		glm::vec3 relativeNorm = glm::normalize(contacts->contactNormal);
-
-		if (glm::dot(relativeVel, relativeNorm) > 0.0f)
-		{
-			return;
-		}
-	}*/
-
-	std::vector<float> projects;
+	std::vector<float> tempProj;
 	for (int i = 0; i < contacts->contactPoints.size(); ++i)
 	{
+		
 		glm::vec3 normal = glm::normalize(contacts->contactNormal);
 
 		glm::vec3 n1 = normal;
@@ -41,30 +26,31 @@ void EngineRoutine::resolveContacts(Contact* contacts, float duration)
 			+ glm::dot(w1, contacts->body[0]->getRotation())
 			+ glm::dot(n2, contacts->body[1]->getVelocity())
 			+ glm::dot(w2, contacts->body[1]->getRotation());
-		projects.push_back(initialVelocityProjection);
-	}
 
- 	 accumulatedImpulse = 0.0f;
-	 for (int j = 0; j < 30; ++j)
-	 {		 
-			for (int i = 0; i < contacts->contactPoints.size(); ++i)
-			{				
-				float lambda = contacts->kekCompute(i, projects[i]);
-				/*accumulatedImpulse += lambda;
-				if (accumulatedImpulse < 0.0f)
-				{
-					lambda += (0.0f - accumulatedImpulse);
-					accumulatedImpulse = 0.0f;
-				}*/
-				if (lambda < 0.0f)
-					continue;
-				contacts->kekApply(lambda, i);			 
-				/*float lambda = contacts->computeLambda(i);
-				if(lambda < 0.0f)
-					continue;
-				contacts->aplly(lambda,i);*/
-			}	 
-	 }	
+		tempProj.push_back(initialVelocityProjection);
+	}
+	proj.push_back(tempProj);
+}
+
+void EngineRoutine::resolveContacts(Contact* contacts, int c)
+{
+	for (int i = 0; i < contacts->contactPoints.size(); ++i)
+	{
+		if (proj[c][i] > 0.0f)
+			return;
+
+		float lambda = contacts->computeLambda(i, proj[c][i]);
+		accumulatedImpulse += lambda;
+		//float pseudo = contacts->computePseudoLambda(0, proj[c]);
+		if (accumulatedImpulse < 0.0f)
+		{
+			lambda += (0.0f - accumulatedImpulse);
+			accumulatedImpulse = 0.0f;
+		}
+
+		contacts->applyLambda(lambda, i);
+	}
+	//contacts->applyPseudoVelocities(pseudo, 0);	
 }
 
 void EngineRoutine::run(float deltaTime,Shader& shader,Shader &debug)
@@ -115,21 +101,29 @@ void EngineRoutine::run(float deltaTime,Shader& shader,Shader &debug)
 	
 	if (data->contactArray.empty() == 0)
 	{
-		for (int i = 0; i < data->contactArray.size(); ++i)
+		for (int k = 0; k < data->contactArray.size(); ++k)
 		{
-			resolveContacts(data->contactArray[i],  deltaTime);
+			calculateProjects(data->contactArray[k], k);
 		}
+		for (int i = 0; i < 15; ++i)
+		{
+			for (int j = 0; j < data->contactArray.size(); ++j)
+			{
+				resolveContacts(data->contactArray[j], j);
+			}		
+		}
+		accumulatedImpulse = 0.0f;
 	}
-	
 
 	if (data->contactArray.empty() == 0)
 	{
 		for (int i = 0; i < data->contactArray.size(); ++i)
 		{
-			data->contactArray[i]->resolvePosition();
+			data->contactArray[i]->resolvePosition(i);
 		}
 	}
 	
+	proj.clear();
 	data->contactArray.clear();
 	for (int i = 0; i < objects.size(); ++i)
 	{

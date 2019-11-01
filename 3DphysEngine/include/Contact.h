@@ -18,20 +18,13 @@ public:
 
 	void setBodyData(RigidBody* one, RigidBody* two, float friction, float restitution);
 
-	
 	static float LinearProjectionPercent;
 	static float PenetrationSlack;
 
+	float computeLambda(int c, float proj);
+	void applyLambda(float lambda, int c);
 
-	float computeLambda(int c);
-	void aplly(float lambda, int c);
-
-	void apllyImpulses(int c);
-
-
-
-	float kekCompute(int c, float proj);
-
-	void kekApply(float lambda, int c);
-	void resolvePosition();
+	float computePseudoLambda(int c, float proj);
+	void applyPseudoVelocities(float lambda, int c);
+	void resolvePosition(int c);
 };
