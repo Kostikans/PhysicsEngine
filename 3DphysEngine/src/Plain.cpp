@@ -1,4 +1,6 @@
 #include "..\include\Plain.h"
+#include <iostream>
+
 #pragma once
 
 Plain::Plain(float mass)
@@ -51,9 +53,9 @@ void Plain::scale(const float& scale)
 void Plain::rotate(const glm::quat& rotate)
 {
 	m_rotate *= rotate;
-	body->setOrientation(rotate);
-	body->update(1.0f/40.0f);
-	direction = glm::normalize(glm::vec3(glm::toMat4(m_rotate) * glm::vec4(direction,1.0f)));
+	body->setOrientation(m_rotate);
+	direction = glm::normalize(glm::vec3(glm::toMat4(m_rotate) * glm::vec4(glm::vec3(0.0f, 1.0f, 0.0f),1.0f)));
+	std::cout << direction.x << " " << direction.y << " " <<direction.z << std::endl;
 }
 
 void Plain::init(float width, float height, float crutch)

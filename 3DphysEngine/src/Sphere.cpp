@@ -53,8 +53,8 @@ void Sphere::init(float radius, float crutch, float depth )
 {
 	m_radius = radius;
 	std::vector<VertexData> vertexes;
-	float sectorCount = 72;
-	float stackCount = 72;
+	float sectorCount = 40;
+	float stackCount = 40;
 	float x, y, z, xy;
 	float nx, ny, nz, lengthInv = 1.0f / radius;
 	float s, t;

@@ -48,7 +48,7 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor = glm::mat3x3(0.0f);
 
 	if (mass != 0.0f)
-		invTensor = glm::inverse(invTensor);
+		invTensor = glm::inverse(invTensor) * 0.8f;
 	else
 		invTensor = glm::mat3x3(0.0f);
 }

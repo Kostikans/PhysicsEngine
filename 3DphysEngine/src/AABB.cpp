@@ -79,6 +79,8 @@ void AABB::scale(const float& scale)
 void AABB::rotate(const glm::quat& rotate)
 {
 	m_rotate *= rotate;
+	body->setOrientation(m_rotate);
+	move(1/60.0f);
 }
 
 void AABB::init(float width, float height, float depth)

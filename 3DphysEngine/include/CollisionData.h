@@ -8,14 +8,13 @@ class CollisionData
 {
 public:
 	std::vector<Contact*> contactArray;
-
-	int contactsLeft;
+	std::vector<Contact*> lastContacts;
 	unsigned contactCount;
 	float friction;
 	float restitution;
 	float tolerance;
 
-	CollisionData() {}
+	CollisionData() { }
 
 	void contactPointView(Shader& shader)
 	{
@@ -31,6 +30,10 @@ public:
 			vao.pushLayout(layout1, vbo);
 			shader.setMat4("modelMatrix", contactArray[i]->body[1]->getModelMatrix());
 			glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0);
+			if (contactArray[i]->persistent == true)
+			{
+				color = glm::vec3(0.0f, 0.0f, 1.0f);
+			}
 			glPointSize((GLfloat)10.0f);
 			shader.setVec3("AxisColor", color);
 

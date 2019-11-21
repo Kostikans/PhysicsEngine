@@ -215,10 +215,10 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	if (normals[best] == glm::vec3(0.0f))
 		return false;
 	
+
 	
    	glm::vec3 axis = glm::normalize(hitNormal);
 
-	
 	std::vector<glm::vec3> maxVertexes1;
 	std::vector<glm::vec3> maxVertexes2;
 
@@ -256,12 +256,10 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	if (glm::length(tempMax1) > glm::length(tempMax2))
 	{
 		maxPoint = tempMax1;
-		//std::cout << "1" << std::endl;
 	}
 	else
 	{
 		maxPoint = tempMax2;
-		//std::cout << "2" << std::endl;
 	}
 
    	glm::vec3 mostPerpendicular;
@@ -318,14 +316,20 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	Contact* contact = new Contact;
 	contact->contactNormal = axis;
 	contact->penetration = penetration;
+
 	for (int i = 0; i < contacts.size(); ++i)
 	{
   		glm::vec3 current = glm::vec3(contacts[i] , glm::dot(maxPoint, axis));
 		current = glm::vec3(toVec3Mat * glm::vec4(current, 1.0f));
 		contact->contactPoints.push_back(current);
 
+		contact->globalPosA = (current);
+		contact->globalPosB = (current + axis * penetration);
+		contact->localPosA = glm::vec3(glm::inverse(box1.body->getModelMatrix()) * glm::vec4(contact->globalPosA, 1.0f));
+		contact->localPosB = glm::vec3(glm::inverse(box2.body->getModelMatrix()) * glm::vec4(contact->globalPosB, 1.0f));
+
 	}
-	contact->setBodyData(box2.body, box1.body, 0.0f, 0.5f);
+	contact->setBodyData(box2.body, box1.body, 0.05f, 0.5f);
 	data->contactArray.push_back(std::move(contact));
 
 	float resultMin1;
@@ -341,7 +345,6 @@ bool CollisionDetector::boxVsBox(const AABB& box1, const AABB& box2, CollisionDa
 	//glm::vec3 pointOnPlane = box1.getPosition() + axis * distance;
 	//glm::vec3 point = contact->contactPoints[i];
 	//contact->contactPoints[i] = point + (axis * glm::dot(axis, pointOnPlane - point));
-
 
 	return true;
 }
@@ -374,8 +377,14 @@ bool CollisionDetector::sphereAndTruePlain(const Sphere& sph2, const Plain& Plai
 	Contact* contact = new Contact;
 	contact->contactNormal = Plain.getDirection();
 	contact->penetration = penetration;
+
+	contact->globalPosA = (point);
+	contact->globalPosB = (point - centerDistance);
+	contact->localPosA = glm::vec3(glm::inverse(sph2.body->getModelMatrix()) * glm::vec4(contact->globalPosA, 1.0f));
+	contact->localPosB = glm::vec3(glm::inverse(Plain.body->getModelMatrix()) * glm::vec4(contact->globalPosB, 1.0f));
+
 	contact->contactPoints.push_back(position - Plain.getDirection() * centerDistance);
-	contact->setBodyData(sph2.body, Plain.body, 0.0f, 1.0f);
+	contact->setBodyData(sph2.body, Plain.body, 0.005f, 1.0f);
 	data->contactArray.push_back(std::move(contact));
 
 	return true;
@@ -418,7 +427,7 @@ bool CollisionDetector::boxAndSphere(const AABB& aabb, const Sphere& sphere, Col
 	contact->contactNormal = glm::normalize(center - closestPtWorld);
 	contact->penetration = sphere.getRadius() - sqrtf(dist);
 	contact->contactPoints.push_back(closestPtWorld);
-	contact->setBodyData(sphere.body, aabb.body, 0.0f, 0.7f);
+	contact->setBodyData(sphere.body, aabb.body, 0.015f, 0.7f);
 	data->contactArray.push_back(std::move(contact));
 
 	return true; 
@@ -465,11 +474,16 @@ bool CollisionDetector::boxAndPlain(const AABB& aabb, const Plain& plain, Collis
 					glm::length(VertexPos - plain.getPosition()) > plain.getHeight())
 					return false;
 			
+				contact->penetration = offset - vertexDistance;
 				contact->contactPoints.push_back(plain.getDirection() * (offset - vertexDistance) + VertexPos);
-				contact->penetration = offset - vertexDistance;	
+
+ 				contact->globalPosA = (VertexPos);
+ 				contact->globalPosB = (plain.getDirection() * (offset - vertexDistance) + VertexPos);
+				contact->localPosA = glm::vec3(glm::inverse(aabb.body->getModelMatrix()) * glm::vec4(contact->globalPosA, 1.0f));
+				contact->localPosB = glm::vec3(glm::inverse(plain.body->getModelMatrix()) * glm::vec4(contact->globalPosB, 1.0f));
 			}
 		}	
-		contact->setBodyData(aabb.body, plain.body, 0.0f, 0.6f);
+		contact->setBodyData(aabb.body, plain.body, 0.05f, 0.6f);
 		data->contactArray.push_back(std::move(contact));
 	}
 
