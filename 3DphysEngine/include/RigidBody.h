@@ -6,7 +6,7 @@
 class RigidBody
 {
 private:
-	glm::vec3 position, oldPosition;
+	glm::vec3 position;
 	glm::vec3 pseudoVelocity , velocity , forceAccum , torqueAccum;
 	glm::vec3 lastFrameAcceleration;
 	glm::vec3 acceleration;
@@ -21,7 +21,6 @@ private:
 	float mass;
 	float rest;
 	float friction;
-	
 	
 public:
 	int type;

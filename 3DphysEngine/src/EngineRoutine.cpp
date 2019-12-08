@@ -212,7 +212,7 @@ void EngineRoutine::run(float deltaTime,Shader& shader,Shader &debug)
 		{
 			calculateProjects(data->contactArray[k], 0);
 		}
-		for (int i = 0; i < 10; ++i)
+		for (int i = 0; i < 15; ++i)
 		{
 			for (int j = 0; j < data->contactArray.size(); ++j)
 			{

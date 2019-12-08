@@ -21,19 +21,16 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		iy = r2 * mass * fraction;
 		iz = r2 * mass * fraction;
 
-
 		invTensor[0] = glm::vec3(ix, 0.0f, 0.0f);
 		invTensor[1] = glm::vec3(0.0f, iy, 0.0f);
 		invTensor[2] = glm::vec3(0.0f, 0.0f, iz);
-		
-
 	}
 	else if (mass != 0 && type == RIGIDBODY_TYPE_BOX) {
 		glm::vec3 size = glm::vec3(1.0f,1.0f,1.0f) * 2.0f;
 		float fraction = (1.0f / 12.0f);
-		float x2 = size.y * size.y;
+		float x2 = size.x * size.x;
 		float y2 = size.y * size.y;
-		float z2 = size.y * size.y;
+		float z2 = size.z * size.z;
 		ix = (y2 + z2) * mass * fraction;
 		iy = (x2 + z2) * mass * fraction;
 		iz = (x2 + y2) * mass * fraction;
@@ -51,6 +48,7 @@ RigidBody::RigidBody(int m_type,float m_mass)
 		invTensor = glm::inverse(invTensor) * 0.8f;
 	else
 		invTensor = glm::mat3x3(0.0f);
+	
 }
 
 void RigidBody::setStat(bool m_stat)
@@ -90,14 +88,14 @@ void RigidBody::update(float deltaTime)
 		rotation.z = 0.0f;
 	}
 	
-	glm::quat kek;
-	kek.w = 0.0f;
-	kek.x = rotation.x * deltaTime;
-	kek.y = rotation.y * deltaTime;
-	kek.z = rotation.z * deltaTime;
-	kek *= orientation;
-	kek *= 0.5f;
-	orientation += kek;	
+	glm::quat temp;
+	temp.w = 0.0f;
+	temp.x = rotation.x * deltaTime;
+	temp.y = rotation.y * deltaTime;
+	temp.z = rotation.z * deltaTime;
+	temp *= orientation;
+	temp *= 0.5f;
+	orientation += temp;	
 
 	position += velocity * deltaTime ;
 	position += pseudoVelocity * deltaTime;

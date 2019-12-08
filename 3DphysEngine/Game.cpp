@@ -20,7 +20,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
-const GLint WIDTH = 1024, HEIGHT = 768;
+const GLint WIDTH = 1600, HEIGHT = 960;
 
 Camera camera(glm::vec3(glm::vec3(0.0f, 7.0f, 3.0f)));
 bool firstMouse = true;
@@ -51,7 +51,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 16);
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Engine", NULL, NULL);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Engine", glfwGetPrimaryMonitor(), NULL);
 
 	if (!window)
 	{
@@ -90,6 +90,7 @@ int main()
 	obj.push_back(plane);
 
 	Transformation* sph = new Sphere(7.0f);
+
 	sph->init(1.0f, 0.0f, 0.0f);
 	sph->translate(glm::vec3(12.0f, -3.0f, -6.0f));
 	//sph->addImpulse(glm::vec3(2.0f, 3.0f, 35.f));
@@ -102,16 +103,17 @@ int main()
 			aabb->translate(glm::vec3((4.0f) * 1.1f, (0.0f + i * 3.0f),  1.1f));
 			obj.push_back(aabb);
 	}*/
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 2; ++i)
 	{
-			Transformation* aabb = new AABB(5.0f);
-			aabb->init(1.0f, 1.0f, 1.0f);
-			aabb->translate(glm::vec3( 1.3f * i , ( i), 0.0f));
-			obj.push_back(aabb);
+		Transformation* aabb = new AABB(4.0f);
+		aabb->init(1.0f, 1.0f, 1.0f);
+		aabb->translate(glm::vec3(1.7f + i * 1.6f, -4.0f + 2.5 * i, 0.0f));
+		obj.push_back(aabb);
 	}
-	/*for (int i = 0; i < 4; ++i)
+	obj[3]->addTorque(glm::vec3(1000.0f, 0.0f, 0.0f));
+	/*for (int i = 0; i < 3; ++i)
 	{
-		for (int j = 0; j < 4; ++j)
+		for (int j = 0; j < 3; ++j)
 		{
 			Transformation* aabb = new AABB(5.0f);
 			aabb->init(1.0f, 1.0f, 1.0f);
@@ -125,7 +127,7 @@ int main()
 	{
 		for (int j = pyro; j > 0; --j)
 		{
-			Transformation* aabb = new AABB(5.0f);
+			Transformation* aabb = new AABB(1.0f);
 			aabb->init(1.0f, 1.0f, 1.0f);
 			aabb->translate(glm::vec3((j + 4.0f + offset) * 2.0f, (-6.0f + i * 2.0f), 5.0f));
 			obj.push_back(aabb);
@@ -146,7 +148,9 @@ int main()
 		 obj[i]->move(deltaPhys);
 		 physics.addEntity(obj[i]);
 	 }
-
+	 int width, height;
+	 glfwGetWindowSize(window, &width, &height);
+	 glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	 glfwSwapInterval(1);
 
@@ -154,9 +158,6 @@ int main()
 	 {
 		 processInput(window);
 
-		 int width, height;
-		 glfwGetWindowSize(window, &width, &height);
-		 glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 		 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
 
@@ -174,10 +175,10 @@ int main()
 		 {
 			 obj[0]->rotate(glm::quat(glm::angleAxis(glm::radians(deltaTime), glm::vec3(1.0, 0.0, 0.0))));
 		 }
-		//if (debug == true)
-       // {
+		 if (debug == true)
+         {
 		    physics.run(deltaPhys,debugShader,ContactPoint);
-		//}
+		 }
 		 if (up == true)
 		 {
 			obj[1]->addImpulse(glm::vec3(0.0f, 0.0f, -0.5f));
@@ -193,10 +194,6 @@ int main()
 		 if (down == true)
 		 {
 			obj[1]->addImpulse(glm::vec3(0.0f, 0.0f, 0.5f));
-		 }
-		 if (jump == true)
-		 {
-			obj[1]->addImpulse(glm::vec3(0.0f, 0.5f, 0.0f));
 		 }
 		 debugShader.use();
 		 debugShader.setMat4("projectionMatrix", projectionMatrix);
